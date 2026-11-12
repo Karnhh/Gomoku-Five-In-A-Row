@@ -3,6 +3,11 @@ import type { Board, Player } from '@gomoku/shared/rules';
 import type { SearchOptions, SearchResult } from './engine.ts';
 import type { EngineReply, EngineRequest } from './worker.ts';
 
+/** Thinking-time choices (ms) offered wherever the advisor is shown. */
+export const THINK_TIMES = [300, 1000, 3000, 10_000, 15_000, 20_000, 30_000];
+/** Deepest iteration the advisor will run. */
+export const MAX_DEPTH = 20;
+
 type Job = { resolve: (r: SearchResult) => void; onDepth?: (r: SearchResult) => void };
 
 export class EngineClient {

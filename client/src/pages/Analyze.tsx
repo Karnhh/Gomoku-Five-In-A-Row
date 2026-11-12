@@ -5,14 +5,11 @@ import type { Player } from '@gomoku/shared/rules';
 import Board from '../components/Board.tsx';
 import type { Ghost, HeatCell } from '../components/Board.tsx';
 import SubTreeView, { fmtScore } from '../components/SubTreeView.tsx';
-import { EngineClient } from '../engine/client.ts';
+import { EngineClient, MAX_DEPTH, THINK_TIMES } from '../engine/client.ts';
 import { WIN, WIN_THRESHOLD, buildTree } from '../engine/engine.ts';
 import type { SearchResult } from '../engine/engine.ts';
 import { SAMPLE } from '../data/positions.ts';
 import { useLang } from '../i18n.tsx';
-
-const MAX_DEPTH = 20;
-const TIMES = [300, 1000, 3000, 10_000, 30_000];
 
 type Brush = 'auto' | 1 | 2 | 0;
 interface Snap { board: number[]; turn: Player; last: number | null }
@@ -30,7 +27,8 @@ export default function Analyze() {
     return { board: boardFromLabels(b ?? '', w ?? ''), turn: params.get('t') === '2' ? 2 : 1, last: null };
   });
   const [history, setHistory] = useState<Snap[]>([]);
-  const [me, setMe] = useState<Player>(snap.turn);
+  // 0 = advise both sides: every position gets a suggestion for whoever is to move
+  const [me, setMe] = useState<Player | 0>(snap.turn);
   const [brush, setBrush] = useState<Brush>('auto');
   const [tab, setTab] = useState<'advisor' | 'tree'>('advisor');
   const [timeMs, setTimeMs] = useState(1000);
@@ -45,7 +43,7 @@ export default function Analyze() {
   const { board, turn, last } = snap;
   const won = useMemo(() => findWinner(board), [board]);
   const over = !!won || isFull(board);
-  const myTurn = !over && turn === me;
+  const myTurn = !over && (me === 0 || turn === me);
   const empty = useMemo(() => board.every((c) => c === 0), [board]);
 
   // advisor: re-run the search in the worker whenever the position changes
@@ -121,9 +119,9 @@ export default function Analyze() {
   const describe = (score: number) => {
     if (score >= WIN_THRESHOLD) return t(`${colorName(turn)}บังคับชนะได้ใน ${WIN - score} ตา (ภายในความลึกที่ค้น)`, `${colorName(turn)} can force a win in ${WIN - score} plies (within the searched depth)`);
     if (score <= -WIN_THRESHOLD) return t(`${colorName(turn)}กันไม่ทัน ภายใน ${WIN + score} ตา (เท่าที่ค้นเห็น)`, `${colorName(turn)} cannot hold within ${WIN + score} plies (as far as the search sees)`);
-    if (score > 150) return t(`${colorName(turn)}ได้เปรียบ`, `${colorName(turn)} is better`);
-    if (score < -150) return t(`${colorName(other(turn))}ได้เปรียบ`, `${colorName(other(turn))} is better`);
-    return t('สูสี', 'Roughly even');
+    // Ordinary scores swing with the parity of the search depth, so no verdict
+    // such as "Black is better" is drawn from them: only forced results are named.
+    return '';
   };
 
   return (
@@ -132,25 +130,30 @@ export default function Analyze() {
       <h1>{t('ตาต่อไปควรวางตรงไหน', 'Where should I play next?')}</h1>
       <p className="muted intro">
         {t(
-          'วางหมากตามเกมที่เล่นอยู่ แล้วเลือกว่าคุณเป็นฝ่ายไหน เมื่อถึงตาคุณ กระดานจะแสดงตาที่น่าเดินพร้อมอันดับ ตัวคำนวณค้นด้วย α–β แบบจำกัดความลึกแล้วให้คะแนนด้วยฟังก์ชัน Eval',
-          'Set up the board from the game you are playing and choose your side. On your turn the board shows the promising moves with their ranks. The engine runs a depth-limited α–β search and scores positions with an evaluation function.',
+          'วางหมากตามเกมที่เล่นอยู่ แล้วเลือกว่าคุณเป็นฝ่ายไหน เมื่อถึงตาคุณ กระดานจะแสดงตาที่น่าเดินพร้อมอันดับ หรือเลือก "ทั้งสองฝ่าย" เพื่อดูคำแนะนำในทุกตา ตัวคำนวณค้นด้วย α–β แบบจำกัดความลึกแล้วให้คะแนนด้วยฟังก์ชัน Eval',
+          'Set up the board from the game you are playing and choose your side. On your turn the board shows the promising moves with their ranks, or pick "Both sides" to get advice on every move. The engine runs a depth-limited α–β search and scores positions with an evaluation function.',
         )}
       </p>
 
       <div className="analyze-layout">
         <div>
           <div className="board-tools top">
+            <div className="field-inline">
             <span className="field-label">{t('ฉันเป็น', 'I am')}</span>
             <div className="seg small">
               <button className={me === 1 ? 'on' : ''} onClick={() => setMe(1)}><span className="chip-stone sm black" /> {t('ดำ', 'Black')}</button>
               <button className={me === 2 ? 'on' : ''} onClick={() => setMe(2)}><span className="chip-stone sm white" /> {t('ขาว', 'White')}</button>
+              <button className={me === 0 ? 'on' : ''} onClick={() => setMe(0)}>{t('ทั้งสองฝ่าย', 'Both sides')}</button>
             </div>
-            <span className="field-label gap">{t('วางหมาก', 'Place')}</span>
+            </div>
+            <div className="field-inline">
+            <span className="field-label">{t('วางหมาก', 'Place')}</span>
             <div className="seg small">
               <button className={brush === 'auto' ? 'on' : ''} onClick={() => setBrush('auto')}>{t('ตามตา', 'Turn order')}</button>
               <button className={brush === 1 ? 'on' : ''} onClick={() => setBrush(1)} aria-label={t('ดำ', 'Black')}><span className="chip-stone sm black" /></button>
               <button className={brush === 2 ? 'on' : ''} onClick={() => setBrush(2)} aria-label={t('ขาว', 'White')}><span className="chip-stone sm white" /></button>
               <button className={brush === 0 ? 'on' : ''} onClick={() => setBrush(0)}>{t('ลบ', 'Erase')}</button>
+            </div>
             </div>
           </div>
           <Board
@@ -206,6 +209,7 @@ export default function Analyze() {
                   {res ? t(`ให้${colorName(turn)}เดินตาที่ดีที่สุด (${cellLabel(res.best)})`, `Play ${colorName(turn)}'s best move (${cellLabel(res.best)})`) : t('กำลังคิด…', 'Thinking…')}
                 </button>
                 <button className="btn" onClick={() => setMe(turn)}>{t(`สลับไปเป็น${colorName(turn)}`, `Switch to ${colorName(turn)}`)}</button>
+                <button className="btn" onClick={() => setMe(0)}>{t('แนะนำทั้งสองฝ่าย', 'Advise both sides')}</button>
               </div>
             </section>
           )}
@@ -216,7 +220,7 @@ export default function Analyze() {
                 <div className="field-inline">
                   <span className="field-label">{t('เวลาคิด', 'Time limit')}</span>
                   <div className="seg small">
-                    {TIMES.map((ms) => (
+                    {THINK_TIMES.map((ms) => (
                       <button key={ms} className={timeMs === ms ? 'on' : ''} onClick={() => setTimeMs(ms)}>{ms / 1000}s</button>
                     ))}
                   </div>
@@ -244,14 +248,16 @@ export default function Analyze() {
                 <>
                   <div className="best-row">
                     <div>
-                      <div className="muted small">{t(`ถึงตาคุณ (${colorName(me)}) · ตาที่แนะนำ`, `Your turn (${colorName(me)}) · suggested move`)}</div>
+                      <div className="muted small">{me === 0
+                        ? t(`ตาของ${colorName(turn)} · ตาที่แนะนำ`, `${colorName(turn)} to move · suggested move`)
+                        : t(`ถึงตาคุณ (${colorName(turn)}) · ตาที่แนะนำ`, `Your turn (${colorName(turn)}) · suggested move`)}</div>
                       <div className="best-move mono">{cellLabel(res.best)}</div>
                     </div>
                     <div>
                       <div className="muted small">{t('คะแนนประเมิน', 'Evaluation')}</div>
                       <div className="best-score mono">{fmtScore(res.score)}</div>
                     </div>
-                    <div className="best-desc">{describe(res.score)}</div>
+                    {describe(res.score) && <div className="best-desc">{describe(res.score)}</div>}
                   </div>
                   <button className="btn primary start" onClick={playBest}>{t(`ลงตาที่แนะนำ (${cellLabel(res.best)})`, `Play the suggested move (${cellLabel(res.best)})`)}</button>
                   <div className="meta-row muted small">

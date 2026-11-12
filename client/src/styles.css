@@ -156,7 +156,7 @@ p { margin: 0 0 12px; }
 .mark.block text { fill: var(--danger); }
 .chip-stone { width: 28px; height: 28px; border-radius: 50%; flex: none; display: inline-block; }
 .chip-stone.sm { width: 16px; height: 16px; }
-.chip-stone.black { background: var(--stone-b); border: 1px solid #000; }
+.chip-stone.black { background: var(--stone-b); border: 1px solid var(--stone-b-hi); }
 .chip-stone.white { background: var(--stone-w); border: 1px solid var(--stone-w-edge); }
 
 /* ---------- home ---------- */
@@ -199,10 +199,36 @@ p { margin: 0 0 12px; }
 .status.over { background: var(--accent-soft); color: var(--accent); }
 .play-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
+.hint-box { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; }
+.hint-box p { margin: 0; }
+.hint-line b { font-size: 18px; }
+.footer-links { display: flex; gap: 16px; flex-wrap: wrap; }
+.manual-page { max-width: 860px; }
+.manual-page .t-section { margin-top: 36px; }
+.manual-page h3 { margin-top: 20px; }
+.steps { margin: 0 0 12px; padding-left: 22px; }
+.steps li { margin-bottom: 6px; }
+kbd, .ui { display: inline-block; padding: 0 7px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); font: inherit; font-size: 0.92em; font-weight: 600; white-space: nowrap; }
+
+/* ---------- online room ---------- */
+.join-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; width: 100%; padding-top: 16px; border-top: 1px solid var(--border); }
+.code-input { font-size: 20px; letter-spacing: 0.2em; text-transform: uppercase; width: 9.5em; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+.code-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.notice { color: var(--danger); margin: 0; }
+.room-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.room-code { font-size: 24px; letter-spacing: 0.12em; }
+.link-text { margin-top: 6px; word-break: break-all; }
+.play-side .callout { margin: 0; font-size: 15px; }
+.callout.ask { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.callout.ask span { flex: 1 1 160px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--border); vertical-align: 1px; margin-left: 4px; }
+.dot.on { background: var(--good); }
+
 /* ---------- analyze ---------- */
 .analyze-layout { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: 24px; align-items: start; margin-top: 20px; }
 .board-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
-.board-tools.top { margin: 0 0 12px; }
+.board-tools.top { margin: 0 0 12px; gap: 8px 16px; }
+.board-tools.top .field-inline { flex-wrap: nowrap; }
 .board-tools .gap { margin-left: 8px; }
 .seg button .chip-stone { vertical-align: -3px; }
 .help { margin-top: 10px; }
@@ -332,13 +358,18 @@ p { margin: 0 0 12px; }
   .setup-grid { grid-template-columns: 1fr; }
   .play-layout { grid-template-columns: 1fr; gap: 14px; }
   .play-board { max-width: min(640px, calc(100dvh - 250px)); min-width: min(100%, 320px); }
-  .play-side { max-width: 640px; width: 100%; margin: 0 auto; }
+  /* the side panel dissolves into the page grid so the board can sit between
+     the player cards and the rest: players, status, board, then controls */
+  .play-side { display: contents; }
+  .play-side > * { order: 3; }
+  .play-side > .room-head { order: 0; }
+  .play-side > .players, .play-side > .status { order: 1; }
+  .play-board { order: 2; }
+  .play-side > * { max-width: 640px; width: 100%; margin-left: auto; margin-right: auto; }
   .players { flex-direction: row; }
   .player { flex: 1; padding: 8px 10px; gap: 8px; }
   .clock { font-size: 18px; }
   .play-actions { grid-template-columns: repeat(4, 1fr); }
-  .play-side { order: -1; }
-  .play-side .status { order: 3; }
   .brand-text { display: none; }
 }
 @media (max-width: 720px) {

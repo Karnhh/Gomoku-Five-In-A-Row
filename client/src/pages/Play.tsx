@@ -3,11 +3,14 @@ import { Link } from 'react-router-dom';
 import { boardFromMoves, cellLabel, isFull, isValidMove, winningLine } from '@gomoku/shared/rules';
 import type { Player } from '@gomoku/shared/rules';
 import Board from '../components/Board.tsx';
+import OnlineLobby from '../components/OnlineLobby.tsx';
+import { HintBox, useAdvice } from '../components/Advice.tsx';
+import { ONLINE_ENABLED } from '../online/flag.ts';
 import { analyzeLink } from '../data/positions.ts';
 import { useLang } from '../i18n.tsx';
 
 type First = 'p1' | 'p2' | 'random';
-interface Settings { first: First; minutes: number; confirm: boolean }
+interface Settings { first: First; minutes: number; confirm: boolean; /** show the engine's suggestion for the side to move */ hint: boolean; hintMs: number }
 
 interface Result {
   /** 0 = draw */
@@ -32,7 +35,7 @@ const fmt = (ms: number) => {
 
 export default function Play() {
   const { t } = useLang();
-  const [settings, setSettings] = useState<Settings>({ first: 'random', minutes: 5, confirm: true });
+  const [settings, setSettings] = useState<Settings>({ first: 'random', minutes: 5, confirm: true, hint: false, hintMs: 1000 });
   const [game, setGame] = useState<Game | null>(null);
   const [pending, setPending] = useState<number | null>(null);
   const lastTick = useRef(0);
@@ -61,6 +64,10 @@ export default function Play() {
     }, 200);
     return () => clearInterval(id);
   }, [running, timed, turn]);
+
+  // optional advice: the same engine as the "Next move" page, for whoever is to move
+  const { hint, hintMs } = settings;
+  const advice = useAdvice(board, turn, running && hint, hintMs);
 
   function start() {
     const blackIs: 0 | 1 = settings.first === 'p1' ? 0 : settings.first === 'p2' ? 1 : Math.random() < 0.5 ? 0 : 1;
@@ -145,22 +152,28 @@ export default function Play() {
               </div>
             </div>
             <label className="check">
+              <input type="checkbox" checked={settings.hint} onChange={(e) => setSettings({ ...settings, hint: e.target.checked })} />
+              <span>{t('แสดงคำแนะนำตาต่อไป (เปิดหรือปิดระหว่างเล่นได้)', 'Show next-move advice (can be switched during play)')}</span>
+            </label>
+            <label className="check">
               <input type="checkbox" checked={settings.confirm} onChange={(e) => setSettings({ ...settings, confirm: e.target.checked })} />
               <span>{t('แตะสองครั้งเพื่อยืนยันการวางหมาก', 'Tap twice to confirm a move')}</span>
             </label>
             <button className="btn primary big" onClick={start}>{t('เริ่มเกม', 'Start game')}</button>
           </section>
 
-          <section className="card setup-card soon">
-            <h2>{t('เล่นออนไลน์ด้วยรหัสห้อง', 'Online with a room code')} <span className="pill">{t('เร็ว ๆ นี้', 'Coming soon')}</span></h2>
-            <p className="muted">
-              {t(
-                'สร้างห้องแล้วส่งรหัสให้เพื่อนเพื่อเล่นจากคนละเครื่อง ส่วนนี้ยังไม่เปิดใช้ กติกาในโฟลเดอร์ shared/ ถูกเขียนให้ server ใช้ตรวจตาเดินด้วยโค้ดชุดเดียวกันได้แล้ว',
-                'Create a room and send the code to a friend to play from two devices. Not available yet; the rules in shared/ are already written so a server can validate moves with the same code.',
-              )}
-            </p>
-            <button className="btn" disabled>{t('สร้างห้อง', 'Create room')}</button>
-          </section>
+          {ONLINE_ENABLED ? <OnlineLobby /> : (
+            <section className="card setup-card soon">
+              <h2>{t('เล่นออนไลน์ด้วยรหัสห้อง', 'Online with a room code')} <span className="pill">{t('เร็ว ๆ นี้', 'Coming soon')}</span></h2>
+              <p className="muted">
+                {t(
+                  'สร้างห้องแล้วส่งรหัสให้เพื่อนเพื่อเล่นจากคนละเครื่อง ส่วนนี้ยังไม่เปิดให้ใช้',
+                  'Create a room and send the code to a friend to play from two devices. This is not open yet.',
+                )}
+              </p>
+              <button className="btn" disabled>{t('สร้างห้อง', 'Create room')}</button>
+            </section>
+          )}
         </div>
       </main>
     );
@@ -210,6 +223,7 @@ export default function Play() {
             onPlay={running ? tap : undefined}
             lastMove={game.moves[game.moves.length - 1] ?? null}
             winLine={res?.line}
+            heat={advice.heat}
             pending={pending !== null && running ? { cell: pending, color: turn } : null}
             label={t('กระดานหมากห้าตัว', 'Five-in-a-row board')}
           />
@@ -220,6 +234,18 @@ export default function Play() {
             {playerCard(2)}
           </div>
           <div className={`status ${res ? 'over' : ''}`} role="status" aria-live="polite">{status}</div>
+          <HintBox
+            on={hint}
+            onToggle={(on) => setSettings({ ...settings, hint: on })}
+            timeMs={hintMs}
+            onTime={(ms) => setSettings({ ...settings, hintMs: ms })}
+            advice={advice}
+            active={running && hint}
+            note={t(
+              'ตัวเลขบนกระดานคืออันดับ 1–5 ของตาที่น่าเดินสำหรับฝ่ายที่กำลังจะเดิน เป็นการประเมิน ไม่ใช่คำตอบที่พิสูจน์แล้ว ทั้งสองคนเห็นคำแนะนำเดียวกัน',
+              'Numbers on the board rank the top 5 moves for the side to move. It is an estimate, not a proven answer, and both players see the same advice.',
+            )}
+          />
           <div className="play-actions">
             <button className="btn" onClick={undo} disabled={!canUndo}>{t('ย้อนตา', 'Undo')}</button>
             <button className="btn" onClick={resign} disabled={!!res}>{t('ยอมแพ้', 'Resign')}</button>

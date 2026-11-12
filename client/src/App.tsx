@@ -1,7 +1,10 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import { Link, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Home from './pages/Home.tsx';
 import Play from './pages/Play.tsx';
+import Room from './pages/Room.tsx';
+import Manual from './pages/Manual.tsx';
+import { ONLINE_ENABLED } from './online/flag.ts';
 import Patterns from './pages/Patterns.tsx';
 import References from './pages/References.tsx';
 import { LangToggle, useLang } from './i18n.tsx';
@@ -34,6 +37,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/play" element={<Play />} />
+          <Route path="/room/:code" element={ONLINE_ENABLED ? <Room /> : <Navigate to="/play" replace />} />
+          <Route path="/manual" element={<Manual />} />
           <Route path="/theory" element={<Theory />} />
           <Route path="/patterns" element={<Patterns />} />
           <Route path="/analyze" element={<Analyze />} />
@@ -48,7 +53,10 @@ export default function App() {
             'Theory based on the Game playing (Chapter 6) slides for Russell & Norvig’s AIMA · Educational, non-commercial',
           )}
         </span>
-        <Link to="/references">{t('ดูแหล่งอ้างอิง →', 'See references →')}</Link>
+        <span className="footer-links">
+          <Link to="/manual">{t('คู่มือการใช้งาน', 'User manual')}</Link>
+          <Link to="/references">{t('ดูแหล่งอ้างอิง →', 'See references →')}</Link>
+        </span>
       </footer>
     </div>
   );

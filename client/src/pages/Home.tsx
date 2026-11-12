@@ -51,6 +51,7 @@ export default function Home() {
           <div className="hero-actions">
             <Link to="/play" className="btn primary">{t('เริ่มเล่น', 'Start playing')}</Link>
             <Link to="/theory" className="btn">{t('อ่านทฤษฎี', 'Read the theory')}</Link>
+            <Link to="/manual" className="btn">{t('คู่มือการใช้งาน', 'User manual')}</Link>
           </div>
         </div>
         <div className="hero-board">

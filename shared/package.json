@@ -3,5 +3,5 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "exports": { "./rules": "./rules.ts" }
+  "exports": { "./rules": "./rules.ts", "./room": "./room.ts" }
 }

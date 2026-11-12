@@ -2,11 +2,17 @@
   "name": "gomoku-handbook",
   "private": true,
   "version": "0.1.0",
-  "workspaces": ["client", "shared"],
+  "workspaces": [
+    "client",
+    "server",
+    "shared"
+  ],
   "scripts": {
     "dev": "npm run dev -w client",
     "build": "npm run build -w client",
     "preview": "npm run preview -w client",
-    "test": "node --experimental-strip-types --test shared/*.test.ts client/src/engine/*.test.ts"
+    "test": "node --experimental-strip-types --test shared/*.test.ts client/src/engine/*.test.ts server/src/*.test.ts",
+    "dev:server": "npm run dev -w server",
+    "typecheck": "tsc -p server && tsc -b client"
   }
 }
