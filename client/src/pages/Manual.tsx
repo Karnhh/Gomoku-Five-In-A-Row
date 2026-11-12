@@ -6,13 +6,14 @@ export default function Manual() {
   const { t } = useLang();
   const U = ({ th, en }: { th: string; en: string }) => <span className="ui">{t(th, en)}</span>;
   const toc: [string, string][] = [
-    ['rules', t('1. กติกา', '1. Rules')],
-    ['play', t('2. เล่นกับเพื่อน', '2. Play with a friend')],
-    ['next', t('3. ตาต่อไป', '3. Next move')],
-    ['score', t('4. อ่านคะแนน', '4. Reading the score')],
-    ['tree', t('5. Tree ย่อย', '5. Sub-tree')],
-    ['other', t('6. หน้าอื่น ๆ', '6. Other pages')],
-    ['faq', t('7. คำถามที่พบบ่อย', '7. FAQ')],
+    ['nav', t('1. การนำทางในเว็บ', '1. Getting around')],
+    ['rules', t('2. กติกา', '2. Rules')],
+    ['play', t('3. เล่นกับเพื่อน', '3. Play with a friend')],
+    ['next', t('4. ตาต่อไป', '4. Next move')],
+    ['score', t('5. อ่านคะแนน', '5. Reading the score')],
+    ['tree', t('6. Tree ย่อย', '6. Sub-tree')],
+    ['other', t('7. หน้าอื่น ๆ', '7. Other pages')],
+    ['faq', t('8. คำถามที่พบบ่อย', '8. FAQ')],
   ];
   return (
     <main className="page manual-page">
@@ -26,8 +27,24 @@ export default function Manual() {
       </p>
       <nav className="toc">{toc.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}</nav>
 
+      <section className="t-section" id="nav">
+        <h2>{t('1. การนำทางในเว็บ', '1. Getting around')}</h2>
+        <p>{t('แถบเมนูอยู่ด้านบนของทุกหน้าและติดอยู่กับจอเมื่อเลื่อนลง บนจอแคบเมนูจะอยู่แถวที่สอง ใต้ชื่อเว็บ', 'The menu bar sits at the top of every page and stays in view as you scroll. On a narrow screen the menu is on a second row, under the site name.')}</p>
+        <ul className="t-list">
+          <li><b>{t('กลับหน้าแรก', 'Back to the home page')}</b> {t('กดเมนู "หน้าแรก" หรือกดชื่อเว็บและรูปหมากดำ-ขาวที่มุมซ้ายบน', 'press the "Home" menu item, or the site name and the black-and-white stones at the top left.')}</li>
+          <li><U th="เล่น" en="Play" /> {t('กระดานสำหรับเล่นกับเพื่อน', 'the board for playing with a friend.')}</li>
+          <li><U th="ทฤษฎี" en="Theory" /> {t('อธิบายวิธีคิดของตัวช่วย', 'how the advisor thinks.')}</li>
+          <li><U th="รูปแบบหมาก" en="Patterns" /> {t('คลังรูปแบบที่ควรรู้', 'the shapes worth knowing.')}</li>
+          <li><U th="ตาต่อไป" en="Next move" /> {t('จัดกระดานแล้วขอคำแนะนำ', 'set up a board and ask for advice.')}</li>
+          <li><b>TH / EN</b> {t('มุมขวาบน สลับภาษาไทยกับอังกฤษ', 'at the top right, switches between Thai and English.')}</li>
+          <li><b>{t('ท้ายหน้า', 'Page footer')}</b> {t('มีลิงก์ไป "คู่มือการใช้งาน" (หน้านี้) และ "แหล่งอ้างอิง"', 'has links to the "User manual" (this page) and the "References".')}</li>
+          <li>{t('เมนูของหน้าที่เปิดอยู่จะมีพื้นหลังเด่นกว่าเมนูอื่น', 'The menu item of the current page is highlighted.')}</li>
+          <li>{t('แถบหัวข้อใต้ชื่อหน้านี้และหน้าทฤษฎีกดเพื่อกระโดดไปหัวข้อนั้นได้ และปุ่มย้อนกลับของเบราว์เซอร์ใช้ได้ตามปกติ', 'The row of chips under the title of this page and of the Theory page jumps to each section, and the browser’s back button works as usual.')}</li>
+        </ul>
+      </section>
+
       <section className="t-section" id="rules">
-        <h2>{t('1. กติกา', '1. Rules')}</h2>
+        <h2>{t('2. กติกา', '2. Rules')}</h2>
         <ul className="t-list">
           <li>{t('กระดานมีเส้น 15×15 วางหมากบนจุดตัดของเส้น ไม่ใช่ในช่อง', 'The board has 15×15 lines. Stones go on the intersections, not inside the squares.')}</li>
           <li>{t('หมากดำเดินก่อน แล้วสลับกันวางทีละตัว วางแล้วย้ายไม่ได้', 'Black moves first, then the players alternate. A placed stone never moves.')}</li>
@@ -39,7 +56,7 @@ export default function Manual() {
       </section>
 
       <section className="t-section" id="play">
-        <h2>{t('2. เล่นกับเพื่อน', '2. Play with a friend')}</h2>
+        <h2>{t('3. เล่นกับเพื่อน', '3. Play with a friend')}</h2>
         <p>{t('เมนู "เล่น" ใช้เล่นสองคนบนเครื่องเดียว ผลัดกันแตะกระดาน', 'The "Play" menu is for two players on one device, taking turns on the same screen.')}</p>
         <h3>{t('ก่อนเริ่มเกม', 'Before the game')}</h3>
         <ol className="steps">
@@ -74,7 +91,7 @@ export default function Manual() {
       </section>
 
       <section className="t-section" id="next">
-        <h2>{t('3. ตาต่อไป', '3. Next move')}</h2>
+        <h2>{t('4. ตาต่อไป', '4. Next move')}</h2>
         <p>{t('เมนู "ตาต่อไป" ใช้จัดกระดานตามเกมที่เล่นอยู่ (ที่นี่หรือที่อื่น) แล้วให้ตัวช่วยประเมินว่าควรวางตรงไหน หน้านี้เริ่มจากกระดานว่าง', 'The "Next move" menu lets you set up the board from a game you are playing (here or elsewhere) and ask the advisor where to play. It starts with an empty board.')}</p>
         <ol className="steps">
           <li><b>{t('ฉันเป็น', 'I am')}</b> {t('เลือก ดำ หรือ ขาว เพื่อรับคำแนะนำเฉพาะตาของคุณ หรือ "ทั้งสองฝ่าย" เพื่อรับคำแนะนำทุกตา', 'pick Black or White to get advice on your turns only, or "Both sides" to get advice on every move.')}</li>
@@ -91,7 +108,7 @@ export default function Manual() {
       </section>
 
       <section className="t-section" id="score">
-        <h2>{t('4. อ่านคะแนน', '4. Reading the score')}</h2>
+        <h2>{t('5. อ่านคะแนน', '5. Reading the score')}</h2>
         <ul className="t-list">
           <li>{t('คะแนนคิดจากมุมมองของฝ่ายที่กำลังจะเดิน ยิ่งมากยิ่งดีสำหรับฝ่ายนั้น', 'The score is from the point of view of the side to move: higher is better for that side.')}</li>
           <li>{t('ค่าบวกคือได้เปรียบ ค่าลบคือเสียเปรียบ ถ้าทุกตาติดลบ ตาที่ติดลบน้อยที่สุดคือตาที่ดีที่สุด', 'Positive means ahead, negative means behind. If every move is negative, the least negative one is best.')}</li>
@@ -108,7 +125,7 @@ export default function Manual() {
       </section>
 
       <section className="t-section" id="tree">
-        <h2>{t('5. Tree ย่อย', '5. Sub-tree')}</h2>
+        <h2>{t('6. Tree ย่อย', '6. Sub-tree')}</h2>
         <p>{t('ในหน้า "ตาต่อไป" กดแท็บ "Tree ย่อย" เพื่อดู game tree 2 ชั้นจากตำแหน่งปัจจุบัน', 'On the "Next move" page, the "Sub-tree" tab shows a 2-ply game tree from the current position.')}</p>
         <ul className="t-list">
           <li>{t('สามเหลี่ยมชี้ขึ้นคือ MAX (ฝ่ายที่กำลังจะเดิน) สามเหลี่ยมชี้ลงคือ MIN (อีกฝ่าย) สี่เหลี่ยมคือใบที่ให้คะแนนด้วย Eval', 'An upward triangle is MAX (the side to move), a downward triangle is MIN (the opponent), and a box is a leaf scored by Eval.')}</li>
@@ -120,7 +137,7 @@ export default function Manual() {
       </section>
 
       <section className="t-section" id="other">
-        <h2>{t('6. หน้าอื่น ๆ', '6. Other pages')}</h2>
+        <h2>{t('7. หน้าอื่น ๆ', '7. Other pages')}</h2>
         <ul className="t-list">
           <li><Link className="inline-link" to="/patterns">{t('รูปแบบหมาก', 'Patterns')}</Link> {t('คลังรูปแบบที่ควรรู้ เช่น สี่เปิด สามเปิด และ fork กด "ลองบนกระดานวิเคราะห์" เพื่อเปิดรูปแบบนั้นในหน้า "ตาต่อไป"', 'the shapes worth knowing, such as the open four, open three and forks. "Try on the analysis board" opens a shape on the "Next move" page.')}</li>
           <li><Link className="inline-link" to="/theory">{t('ทฤษฎี', 'Theory')}</Link> {t('อธิบายวิธีที่ตัวช่วยคิด มี demo ที่กดรันได้จริง', 'explains how the advisor thinks, with demos that really run.')}</li>
@@ -131,7 +148,7 @@ export default function Manual() {
       </section>
 
       <section className="t-section" id="faq">
-        <h2>{t('7. คำถามที่พบบ่อย', '7. FAQ')}</h2>
+        <h2>{t('8. คำถามที่พบบ่อย', '8. FAQ')}</h2>
         <h3>{t('ทำไมคะแนนของตำแหน่งเดิมเปลี่ยนไปมา', 'Why does the score of the same position change?')}</h3>
         <p>{t('คะแนนขึ้นกับความลึกที่ค้นได้ ความลึกคี่มักให้คะแนนสูงกว่าความลึกคู่ ควรเทียบคะแนนจากการคิดรอบเดียวกันเท่านั้น ส่วนอันดับของตามักคงเดิม', 'The score depends on the depth reached, and odd depths tend to score higher than even ones. Only compare scores from the same run; the ranking of moves is usually stable.')}</p>
         <h3>{t('ทำไมตัวช่วยไม่แนะนำตาที่อยู่ไกลจากหมาก', 'Why does the advisor never suggest a far-away move?')}</h3>

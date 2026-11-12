@@ -26,6 +26,7 @@ export default function App() {
           <span className="brand-text">{t('คู่มือหมากห้าตัว', 'Gomoku Handbook')}</span>
         </Link>
         <div className="nav-links">
+          <NavLink to="/" end className="link home-link">{t('หน้าแรก', 'Home')}</NavLink>
           <NavLink to="/play" className="link">{t('เล่น', 'Play')}</NavLink>
           <NavLink to="/theory" className="link">{t('ทฤษฎี', 'Theory')}</NavLink>
           <NavLink to="/patterns" className="link">{t('รูปแบบหมาก', 'Patterns')}</NavLink>

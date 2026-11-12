@@ -370,7 +370,6 @@ kbd, .ui { display: inline-block; padding: 0 7px; border-radius: 6px; border: 1p
   .player { flex: 1; padding: 8px 10px; gap: 8px; }
   .clock { font-size: 18px; }
   .play-actions { grid-template-columns: repeat(4, 1fr); }
-  .brand-text { display: none; }
 }
 @media (max-width: 720px) {
   .widget.two-col { grid-template-columns: 1fr; }
@@ -391,6 +390,12 @@ kbd, .ui { display: inline-block; padding: 0 7px; border-radius: 6px; border: 1p
   .data-table { font-size: 14px; }
   .data-table th, .data-table td { padding: 6px; }
   .lang-toggle button { padding: 4px 7px; }
+}
+/* narrow screens: the menu drops to its own row, so the site name always fits */
+@media (max-width: 780px) {
+  .nav { flex-wrap: wrap; row-gap: 6px; padding-top: 8px; padding-bottom: 8px; }
+  .nav-links { order: 3; width: 100%; justify-content: center; gap: 2px; }
+  .t-section { scroll-margin-top: 108px; }
 }
 @media (max-width: 380px) {
   .nav a.link { padding: 5px 6px; font-size: 13px; }
