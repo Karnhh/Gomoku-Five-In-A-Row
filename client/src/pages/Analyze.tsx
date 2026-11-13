@@ -117,8 +117,8 @@ export default function Analyze() {
 
   const colorName = (c: Player) => (c === 1 ? t('ดำ', 'Black') : t('ขาว', 'White'));
   const describe = (score: number) => {
-    if (score >= WIN_THRESHOLD) return t(`${colorName(turn)}บังคับชนะได้ใน ${WIN - score} ตา (ภายในความลึกที่ค้น)`, `${colorName(turn)} can force a win in ${WIN - score} plies (within the searched depth)`);
-    if (score <= -WIN_THRESHOLD) return t(`${colorName(turn)}กันไม่ทัน ภายใน ${WIN + score} ตา (เท่าที่ค้นเห็น)`, `${colorName(turn)} cannot hold within ${WIN + score} plies (as far as the search sees)`);
+    if (score >= WIN_THRESHOLD) return t(`${colorName(turn)}บังคับชนะได้ใน ${WIN - score} ตา (ภายในความลึกที่ค้น)`, `${colorName(turn)} can force a win in ${WIN - score} ${WIN - score === 1 ? 'ply' : 'plies'} (within the searched depth)`);
+    if (score <= -WIN_THRESHOLD) return t(`${colorName(turn)}กันไม่ทัน ภายใน ${WIN + score} ตา (เท่าที่ค้นเห็น)`, `${colorName(turn)} cannot hold within ${WIN + score} ${WIN + score === 1 ? 'ply' : 'plies'} (as far as the search sees)`);
     // Ordinary scores swing with the parity of the search depth, so no verdict
     // such as "Black is better" is drawn from them: only forced results are named.
     return '';
