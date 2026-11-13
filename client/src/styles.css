@@ -304,6 +304,7 @@ kbd, .ui { display: inline-block; padding: 0 7px; border-radius: 6px; border: 1p
 .toc a:hover { background: var(--accent-soft); color: var(--accent); }
 .t-section { margin-top: 44px; scroll-margin-top: 70px; }
 .t-section h2 { font-size: 24px; }
+.t-section h3 { margin-top: 24px; }
 .code { font-family: var(--mono); font-size: 13px; background: var(--surface-2); padding: 14px 16px; border-radius: 10px; overflow-x: auto; line-height: 1.55; margin: 0 0 14px; }
 .widget { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); margin: 16px 0; }
 .widget.two-col { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 20px; align-items: start; }
@@ -319,6 +320,8 @@ kbd, .ui { display: inline-block; padding: 0 7px; border-radius: 6px; border: 1p
 .data-table th, .data-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
 .data-table th { font-size: 13px; color: var(--muted); font-weight: 600; }
 .data-table td.mono { font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* numbers followed by a Thai word: the mono face has no Thai glyphs, so use the text face */
+.data-table td.num { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 500; }
 .data-table tr.total td { font-weight: 600; border-bottom: 0; }
 .bar-cell { width: 34%; vertical-align: middle !important; }
 .bar { height: 10px; border-radius: 5px; background: var(--surface-2); overflow: hidden; }

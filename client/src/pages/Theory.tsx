@@ -40,9 +40,31 @@ export default function Theory() {
             <tr><td>{t('จำนวนช่อง', 'Points')}</td><td className="mono">9</td><td className="mono">225</td></tr>
             <tr><td>{t('ตาที่เลือกได้ในตาแรก (b)', 'Moves on the first turn (b)')}</td><td className="mono">9</td><td className="mono">225</td></tr>
             <tr><td>{t('วิธีวางหมากบนกระดาน (ขอบบน)', 'Ways to fill the board (upper bound)')}</td><td className="mono">3⁹ = 19,683</td><td className="mono">3²²⁵ ≈ 10¹⁰⁷</td></tr>
-            <tr><td>{t('ขนาด game tree', 'Game-tree size')}</td><td className="mono">549,946</td><td className="mono">{t('ประมาณ 10⁷⁰', 'about 10⁷⁰')}</td></tr>
+            <tr><td>{t('ขนาด game tree', 'Game-tree size')}</td><td className="mono">549,946</td><td className="num">{t('ประมาณ 10⁷⁰', 'about 10⁷⁰')}</td></tr>
           </tbody>
         </table>
+        <h3>{t('ถ้าจะค้นให้ครบทุกแบบ ต้องรอนานแค่ไหน', 'How long would searching everything take?')}</h3>
+        <p>
+          {t(
+            'ตัวคำนวณในเว็บนี้ค้นได้ราว 10⁵ node ต่อวินาทีบนเครื่องทั่วไป หนึ่งปีมีประมาณ 3 × 10⁷ วินาที จึงค้นได้ปีละราว 3 × 10¹² node การไล่ game tree ขนาด 10⁷⁰ node ให้ครบจึงใช้เวลาราว 10⁵⁷ ปี ขณะที่จักรวาลมีอายุประมาณ 1.4 × 10¹⁰ ปี',
+            'The engine on this site searches about 10⁵ nodes per second on an ordinary machine. A year has about 3 × 10⁷ seconds, so that is roughly 3 × 10¹² nodes a year. Walking a game tree of 10⁷⁰ nodes would therefore take about 10⁵⁷ years, while the universe is about 1.4 × 10¹⁰ years old.',
+          )}
+        </p>
+        <table className="data-table">
+          <thead><tr><th>{t('สมมติว่า', 'Suppose')}</th><th>{t('node ที่ต้องค้น', 'Nodes to search')}</th><th>{t('เวลาที่ใช้', 'Time needed')}</th><th>{t('เทียบกับอายุจักรวาล', 'Versus the age of the universe')}</th></tr></thead>
+          <tbody>
+            <tr><td>{t('เว็บนี้ตามที่เป็นอยู่', 'This site as it is')}</td><td className="mono">10⁷⁰</td><td className="num">{t('~10⁵⁷ ปี', '~10⁵⁷ years')}</td><td className="num">{t('10⁴⁷ เท่า', '10⁴⁷ times')}</td></tr>
+            <tr><td>{t('เครื่องเร็วขึ้นล้านเท่า', 'A machine a million times faster')}</td><td className="mono">10⁷⁰</td><td className="num">{t('~10⁵¹ ปี', '~10⁵¹ years')}</td><td className="num">{t('10⁴¹ เท่า', '10⁴¹ times')}</td></tr>
+            <tr><td>{t('α–β ที่เรียงตาได้สมบูรณ์แบบ', 'α–β with perfect move ordering')}</td><td className="mono">√10⁷⁰ = 10³⁵</td><td className="num">{t('~10²² ปี', '~10²² years')}</td><td className="num">{t('ล้านล้านเท่า', 'a trillion times')}</td></tr>
+            <tr><td>{t('ทั้งสองอย่างพร้อมกัน', 'Both at once')}</td><td className="mono">10³⁵</td><td className="num">{t('~10¹⁶ ปี', '~10¹⁶ years')}</td><td className="num">{t('ล้านเท่า', 'a million times')}</td></tr>
+          </tbody>
+        </table>
+        <p className="muted small">
+          {t(
+            'ตัวเลขเป็นค่าประมาณระดับเลขยกกำลัง แถวที่สามใช้สูตร O(b^(m/2)) ของ α–β ในกรณีดีที่สุด ซึ่งทำจริงไม่ได้ เพราะถ้ารู้ลำดับตาที่สมบูรณ์แบบก็ไม่ต้องค้นแล้ว ข้อสรุปคือความเร็วเครื่องช่วยไม่ได้ ต้องเปลี่ยนวิธีค้น',
+            'These are order-of-magnitude estimates. The third row uses α–β’s best-case O(b^(m/2)), which is not achievable in practice: if we knew the perfect order there would be nothing left to search. The conclusion is that speed cannot save us; the method has to change.',
+          )}
+        </p>
         <p>
           {t(
             'สไลด์บทที่ 6 ยกตัวอย่างงบเวลาไว้ว่า ถ้ามีเวลา 100 วินาทีต่อตา และค้นได้ 10⁴ node ต่อวินาที จะค้นได้ 10⁶ node ต่อตา ตัวเลขนี้ห่างจาก 10⁷⁰ มากจนเครื่องที่เร็วขึ้นล้านเท่าก็ไม่ช่วย สถานการณ์เดียวกับหมากรุก ทางออกมาตรฐานคือ',
