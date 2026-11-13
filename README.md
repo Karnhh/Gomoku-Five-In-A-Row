@@ -7,7 +7,7 @@
 ## English
 
 A handbook for five in a row (Gomoku) on a 15×15 board: a board to play on with a friend, and an α–β + Eval engine that estimates where to play next.
-It builds on the [Tic-Tac-Toe Handbook](https://github.com/Karnhh/Tic-Tac-Toe-Handbook). The site is bilingual (Thai / English) and supports dark mode.
+The site is bilingual (Thai / English) and supports dark mode.
 
 ### Pages
 
@@ -117,7 +117,7 @@ The theory is based on the Game playing (Chapter 6) lecture slides for Russell &
 ## ภาษาไทย
 
 คู่มือเกมหมากห้าตัวบนกระดาน 15×15: กระดานสำหรับเล่นกับเพื่อน และตัวคำนวณ α–β + Eval ที่ประเมินว่าตาต่อไปควรวางตรงไหน
-ต่อยอดจาก [Tic-Tac-Toe Handbook](https://github.com/Karnhh/Tic-Tac-Toe-Handbook) เว็บมีสองภาษา (ไทย / อังกฤษ) และรองรับโหมดมืด
+เว็บมีสองภาษา (ไทย / อังกฤษ) และรองรับโหมดมืด
 
 ### หน้าในเว็บ
 

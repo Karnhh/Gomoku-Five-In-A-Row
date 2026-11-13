@@ -67,7 +67,7 @@ export default function References() {
           <li>{t('ฟังก์ชัน Eval แบบนับแนว 5 ช่อง และน้ำหนัก 1, 12, 120, 1500', 'The line-of-five counting evaluation function and its weights 1, 12, 120, 1500.')}</li>
           <li>{t('การจำกัดตาที่พิจารณา (ห่างหมากไม่เกิน 2 ช่อง) คะแนนแบบเร็วสำหรับ move ordering และ iterative deepening ซึ่งไม่ได้อยู่ในสไลด์บทที่ 6', 'Candidate limiting (within 2 steps of a stone), the quick score for move ordering, and iterative deepening, which are not in the Chapter 6 slides.')}</li>
           <li>{t('กระดาน แผนภาพ ตัวอย่างรูปแบบหมาก และ demo ทุกชิ้น', 'The board, the diagrams, the pattern examples and every demo.')}</li>
-          <li>{t('ตัวเลข 572 แนวคำนวณด้วยโปรแกรมในเว็บนี้และมี unit test ตรวจสอบ ส่วน 549,946 node มาจาก Tic-Tac-Toe Handbook', 'The figure of 572 lines is computed by this site’s code and checked by a unit test; 549,946 nodes comes from the Tic-Tac-Toe Handbook.')}</li>
+          <li>{t('ตัวเลข 572 แนวคำนวณด้วยโปรแกรมในเว็บนี้และมี unit test ตรวจสอบ ส่วน 549,946 คือจำนวน node ของ game tree ทั้งต้นของ Tic-Tac-Toe ซึ่งหน้าทฤษฎีใช้เปรียบเทียบ', 'The figure of 572 lines is computed by this site’s code and checked by a unit test; 549,946 is the number of nodes in the whole Tic-Tac-Toe game tree, which the Theory page uses for comparison.')}</li>
         </ul>
       </section>
 

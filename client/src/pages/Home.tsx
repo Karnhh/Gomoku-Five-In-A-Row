@@ -30,22 +30,22 @@ export default function Home() {
     },
   ];
   const stats = [
+    ['5', t('ตัวติดกันเพื่อชนะ', 'in a row to win')],
     ['225', t('จุดตัดบนกระดาน 15×15', 'points on the 15×15 board')],
     ['572', t('แนว 5 ช่องที่เป็นไปได้', 'possible lines of five')],
     ['~10⁷⁰', t('ขนาด game tree โดยประมาณ', 'estimated game-tree size')],
-    ['549,946', t('node ของ Tic-Tac-Toe ทั้งต้น', 'nodes in the whole Tic-Tac-Toe tree')],
   ];
 
   return (
     <main className="page">
       <section className="hero">
         <div>
-          <span className="tag">{t('คู่มือเกมหมากห้าตัว', 'A five-in-a-row handbook')}</span>
-          <h1>{t('หมากห้าตัว กับ AI ที่ค้นไม่ถึงจบเกม', 'Five in a Row, and an AI that cannot see the end')}</h1>
+          <span className="tag">{t('คู่มือและกระดานเล่น', 'Handbook and board')}</span>
+          <h1>{t('หมากห้าตัว', 'Five in a Row')}</h1>
           <p className="lead">
             {t(
-              'Tic-Tac-Toe ค้นได้ทั้งต้นจึงรู้คำตอบที่แน่นอน หมากห้าตัวบนกระดาน 15×15 ใหญ่เกินไป จึงต้องหยุดค้นกลางทางแล้วประเมินด้วยฟังก์ชัน Eval คู่มือนี้อธิบายวิธีนั้น และมีกระดานให้เล่นกับเพื่อน',
-              'Tic-Tac-Toe can be searched to the end, so the answer is exact. Five in a row on a 15×15 board is far too big, so the search has to stop early and estimate with an evaluation function. This handbook explains how, and has a board to play on with a friend.',
+              'เกมกระดาน 15×15 ที่ใครเรียงหมากได้ห้าตัวติดกันก่อนเป็นฝ่ายชนะ เล่นกับเพื่อน ขอคำแนะนำว่าตาต่อไปควรวางตรงไหน และเรียนรู้รูปแบบหมากกับวิธีคิดของ AI ได้ในเว็บนี้',
+              'A 15×15 board game where the first to line up five stones wins. Play with a friend, ask where to play next, and learn the key shapes and how the AI thinks.',
             )}
           </p>
           <div className="hero-actions">

@@ -283,8 +283,8 @@ export default function Analyze() {
               )}
               <div className="callout note">
                 {t(
-                  'นี่คือการประเมิน ไม่ใช่คำตอบที่พิสูจน์แล้ว ตัวคำนวณค้นได้ลึกจำกัดและดูเฉพาะตาที่อยู่ใกล้หมากเดิม ต่างจาก Tic-Tac-Toe ที่ค้นได้ถึงจบเกม',
-                  'This is an estimate, not a proven answer. The engine searches to a limited depth and only looks at moves near existing stones, unlike Tic-Tac-Toe where the search reaches the end of the game.',
+                  'นี่คือการประเมิน ไม่ใช่คำตอบที่พิสูจน์แล้ว ตัวคำนวณค้นได้ลึกจำกัดและดูเฉพาะตาที่อยู่ใกล้หมากเดิม',
+                  'This is an estimate, not a proven answer. The engine searches to a limited depth and only looks at moves near existing stones.',
                 )}
               </div>
             </section>
