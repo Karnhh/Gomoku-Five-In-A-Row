@@ -40,7 +40,6 @@ export default function Home() {
     <main className="page">
       <section className="hero">
         <div>
-          <span className="tag">{t('คู่มือและกระดานเล่น', 'Handbook and board')}</span>
           <h1>{t('หมากห้าตัว', 'Five in a Row')}</h1>
           <p className="lead">
             {t(

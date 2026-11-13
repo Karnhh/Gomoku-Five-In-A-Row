@@ -22,7 +22,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.lang = lang;
-    document.title = lang === 'th' ? 'คู่มือหมากห้าตัว' : 'Gomoku Handbook';
+    document.title = lang === 'th' ? 'หมากห้าตัว' : 'Gomoku';
   }, [lang]);
 
   const setLang = useCallback((l: Lang) => {

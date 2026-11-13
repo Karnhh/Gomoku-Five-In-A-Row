@@ -1,4 +1,4 @@
-# Gomoku Handbook · คู่มือหมากห้าตัว
+# Gomoku · หมากห้าตัว
 
 [English](#english) · [ภาษาไทย](#ภาษาไทย)
 
@@ -6,7 +6,7 @@
 
 ## English
 
-A handbook for five in a row (Gomoku) on a 15×15 board: a board to play on with a friend, and an α–β + Eval engine that estimates where to play next.
+Five in a row (Gomoku) on a 15×15 board: a board to play on with a friend, an α–β + Eval engine that estimates where to play next, and a handbook that explains how it works.
 The site is bilingual (Thai / English) and supports dark mode.
 
 ### Pages
@@ -116,7 +116,7 @@ The theory is based on the Game playing (Chapter 6) lecture slides for Russell &
 
 ## ภาษาไทย
 
-คู่มือเกมหมากห้าตัวบนกระดาน 15×15: กระดานสำหรับเล่นกับเพื่อน และตัวคำนวณ α–β + Eval ที่ประเมินว่าตาต่อไปควรวางตรงไหน
+เกมหมากห้าตัวบนกระดาน 15×15: กระดานสำหรับเล่นกับเพื่อน ตัวคำนวณ α–β + Eval ที่ประเมินว่าตาต่อไปควรวางตรงไหน และคู่มือที่อธิบายวิธีทำงานของมัน
 เว็บมีสองภาษา (ไทย / อังกฤษ) และรองรับโหมดมืด
 
 ### หน้าในเว็บ

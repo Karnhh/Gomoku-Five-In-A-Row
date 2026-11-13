@@ -21,9 +21,9 @@ export default function App() {
   return (
     <div className="app">
       <nav className="nav">
-        <Link to="/" className="brand" aria-label="Gomoku Handbook">
+        <Link to="/" className="brand" aria-label={t('หมากห้าตัว หน้าแรก', 'Gomoku home')}>
           <span className="brand-mark"><i className="b" /><i className="w" /></span>
-          <span className="brand-text">{t('คู่มือหมากห้าตัว', 'Gomoku Handbook')}</span>
+          <span className="brand-text">{t('หมากห้าตัว', 'Gomoku')}</span>
         </Link>
         <div className="nav-links">
           <NavLink to="/" end className="link home-link">{t('หน้าแรก', 'Home')}</NavLink>
