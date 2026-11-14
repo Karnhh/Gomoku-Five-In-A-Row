@@ -130,7 +130,7 @@ export default function Manual() {
         <p>{t('ในหน้า "ตาต่อไป" กดแท็บ "Tree ย่อย" เพื่อดู game tree 2 ชั้นจากตำแหน่งปัจจุบัน', 'On the "Next move" page, the "Sub-tree" tab shows a 2-ply game tree from the current position.')}</p>
         <ul className="t-list">
           <li>{t('สามเหลี่ยมชี้ขึ้นคือ MAX (ฝ่ายที่กำลังจะเดิน) สามเหลี่ยมชี้ลงคือ MIN (อีกฝ่าย) สี่เหลี่ยมคือใบที่ให้คะแนนด้วย Eval', 'An upward triangle is MAX (the side to move), a downward triangle is MIN (the opponent), and a box is a leaf scored by Eval.')}</li>
-          <li>{t('กล่องเส้นประที่มีรูปกรรไกรคือกิ่งที่ α–β ตัดทิ้ง ไม่ต้องประเมิน', 'A dashed box with scissors is a branch α–β pruned without evaluating.')}</li>
+          <li>{t('กล่องเส้นประที่เขียนว่า "ตัด" คือกิ่งที่ α–β ตัดทิ้ง ไม่ต้องประเมิน', 'A dashed box marked "cut" is a branch α–β pruned without evaluating.')}</li>
           <li>{t('เส้นหนาสีม่วงคือแนวที่ดีที่สุดของทั้งสองฝ่าย', 'The thick purple line is best play for both sides.')}</li>
           <li>{t('คลิก node เพื่อดูตาเดินบนกระดานเป็นหมากมีหมายเลข แล้วกด "เดินตามนี้แล้วขยายต่อ" เพื่อสร้าง tree ใหม่จากจุดนั้น', 'Click a node to preview its moves as numbered stones, then "Follow and expand" to grow a new tree from there.')}</li>
           <li>{t('"ตาที่พิจารณาต่อ node" กำหนดจำนวนกิ่งต่อ node ตั้งแต่ 3 ถึง 6', '"Moves per node" sets how many branches each node has, from 3 to 6.')}</li>

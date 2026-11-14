@@ -55,8 +55,8 @@ export default function App() {
       <footer className="footer">
         <span>
           {t(
-            'เนื้อหาทฤษฎีอ้างอิงจากสไลด์ Game playing (บทที่ 6) ประกอบตำรา AIMA ของ Russell & Norvig · ทำเพื่อการศึกษา ไม่ใช่เชิงพาณิชย์',
-            'Theory based on the Game playing (Chapter 6) slides for Russell & Norvig’s AIMA · Educational, non-commercial',
+            'เว็บนี้ทำขึ้นเพื่อการศึกษา ไม่ใช่เชิงพาณิชย์',
+            'This site is educational and non-commercial.',
           )}
         </span>
         <span className="footer-links">

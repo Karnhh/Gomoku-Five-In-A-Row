@@ -15,8 +15,8 @@ export default function Home() {
     },
     {
       to: '/theory', tag: t('ทฤษฎี', 'Theory'),
-      title: t('ทำไมค้นทั้งต้นไม่ได้', 'Why the full tree is out of reach'),
-      body: t('จำกัดตาที่พิจารณา cutoff + Eval, α–β กับ move ordering และ iterative deepening พร้อม demo ที่รันจริง', 'Limiting candidate moves, cutoff + Eval, α–β with move ordering and iterative deepening, with demos that really run.'),
+      title: t('AI เลือกตาเดินอย่างไร', 'How the AI chooses a move'),
+      body: t('เริ่มจากพื้นฐาน minimax และ α–β พร้อมต้นไม้ที่กดดูทีละขั้น แล้วต่อด้วย cutoff + Eval, move ordering และ iterative deepening', 'From the basics, minimax and α–β with a tree you can step through, on to cutoff + Eval, move ordering and iterative deepening.'),
     },
     {
       to: '/patterns', tag: t('รูปแบบหมาก', 'Patterns'),

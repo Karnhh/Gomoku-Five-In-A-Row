@@ -15,7 +15,7 @@ The site is bilingual (Thai / English) and supports dark mode.
 | --- | --- |
 | `/play` | Two players on one device: choose who moves first, clock, undo, tap-twice-to-confirm, and optional next-move advice during play |
 | `/analyze` | Where should I play next: set up a board, get advice with a heatmap, and view a 2-ply sub-tree with its pruned branches |
-| `/theory` | Why the full tree is out of reach, limiting candidate moves, cutoff + Eval, α–β + move ordering, iterative deepening |
+| `/theory` | How the AI chooses a move, from scratch: game trees, minimax and α–β with a step-through tree, then why the full tree is out of reach, limiting candidate moves, cutoff + Eval, move ordering, iterative deepening |
 | `/patterns` | Pattern library: open four, open three, split three, and the 4-3 / 4-4 / 3-3 forks |
 | `/manual` | User manual |
 | `/references` | Sources |
@@ -354,7 +354,7 @@ The theory is based on the Game playing (Chapter 6) lecture slides for Russell &
 | --- | --- |
 | `/play` | เล่นสองคนบนเครื่องเดียว: เลือกผู้เดินก่อน นาฬิกา ย้อนตา แตะสองครั้งเพื่อยืนยัน และเปิดคำแนะนำตาต่อไประหว่างเล่นได้ |
 | `/analyze` | ตาต่อไปควรวางตรงไหน: จัดกระดานเอง รับคำแนะนำพร้อม heatmap และดู tree ย่อย 2 ชั้นพร้อมกิ่งที่ถูกตัด |
-| `/theory` | ทำไมค้นทั้งต้นไม่ได้, จำกัดตาที่พิจารณา, cutoff + Eval, α–β + move ordering, iterative deepening |
+| `/theory` | AI เลือกตาเดินอย่างไร เริ่มจากศูนย์: game tree, minimax และ α–β พร้อมต้นไม้ที่กดดูทีละขั้น แล้วต่อด้วยเหตุผลที่ค้นทั้งต้นไม่ได้, จำกัดตาที่พิจารณา, cutoff + Eval, move ordering, iterative deepening |
 | `/patterns` | คลังรูปแบบหมาก: สี่เปิด สามเปิด สามแยก และ fork 4-3 / 4-4 / 3-3 |
 | `/manual` | คู่มือการใช้งาน |
 | `/references` | แหล่งอ้างอิง |

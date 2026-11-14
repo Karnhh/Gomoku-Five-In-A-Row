@@ -24,8 +24,8 @@ export default function References() {
             </p>
             <p className="muted small">
               {t(
-                'ใช้เป็นแหล่งของ minimax, α–β pruning และคุณสมบัติ O(b^(m/2)), ตัวอย่างงบเวลา 100 วินาที × 10⁴ node/วินาที, cutoff test, evaluation function แบบผลรวมถ่วงน้ำหนัก, ข้อสังเกตว่าค่าที่แน่นอนของ Eval ไม่สำคัญ และ quiescence search',
-                'Source for minimax, α–β pruning and its O(b^(m/2)) property, the 100 s × 10⁴ nodes/s budget example, cutoff tests, weighted-sum evaluation functions, the remark that exact Eval values do not matter, and quiescence search.',
+                'ใช้เป็นแหล่งของ: ประเภทของเกม (สองคน ไม่มีการสุ่ม เห็นข้อมูลครบ), แนวคิดและคุณสมบัติของ minimax (หาคำตอบได้เมื่อ tree จำกัด, ดีที่สุดเมื่อคู่แข่งเล่นดีที่สุด, เวลา O(bᵐ), หน่วยความจำ O(bm)), ต้นไม้ตัวอย่าง 2 ply ค่า 3, 12, 8 / 2, 4, 6 / 14, 5, 2 และการตัดกิ่งในต้นไม้นั้น, ความหมายของ α และ β, คุณสมบัติ O(b^(m/2)) เมื่อเรียงลำดับสมบูรณ์แบบ, ตัวอย่างงบเวลา 100 วินาที × 10⁴ node/วินาที, cutoff test, evaluation function แบบผลรวมถ่วงน้ำหนัก, ข้อสังเกตว่าค่าที่แน่นอนของ Eval ไม่สำคัญ และ quiescence search',
+                'Source for: the kind of game (two players, deterministic, perfect information); the idea and properties of minimax (complete if the tree is finite, optimal against an optimal opponent, O(bᵐ) time, O(bm) space); the 2-ply example tree 3, 12, 8 / 2, 4, 6 / 14, 5, 2 and the pruning in it; the meaning of α and β; the O(b^(m/2)) property with perfect ordering; the 100 s × 10⁴ nodes/s budget example; cutoff tests; weighted-sum evaluation functions; the remark that exact Eval values do not matter; and quiescence search.',
               )}
             </p>
           </li>
@@ -63,9 +63,9 @@ export default function References() {
       <section className="refs-block">
         <h2>{t('ส่วนที่ทำขึ้นเองในเว็บนี้', 'Original to this site')}</h2>
         <ul className="t-list">
-          <li>{t('คำอธิบายทั้งหมดเรียบเรียงใหม่ทั้งภาษาไทยและอังกฤษ ไม่ได้คัดลอกข้อความหรือรูปจากสไลด์', 'All explanations were rewritten in Thai and English; no text or images were copied from the slides.')}</li>
+          <li>{t('คำอธิบายทั้งหมดเรียบเรียงใหม่ทั้งภาษาไทยและอังกฤษ ไม่ได้คัดลอกข้อความหรือรูปจากสไลด์ ต้นไม้ตัวอย่างในหน้าทฤษฎีใช้ตัวเลขชุดเดียวกับสไลด์ แต่วาดใหม่และเขียนคำอธิบายทีละขั้นเอง', 'All explanations were rewritten in Thai and English; no text or images were copied from the slides. The example tree on the Theory page uses the same numbers as the slides, but it was redrawn and its step-by-step commentary is this site’s own.')}</li>
           <li>{t('ฟังก์ชัน Eval แบบนับแนว 5 ช่อง และน้ำหนัก 1, 12, 120, 1500', 'The line-of-five counting evaluation function and its weights 1, 12, 120, 1500.')}</li>
-          <li>{t('การจำกัดตาที่พิจารณา (ห่างหมากไม่เกิน 2 ช่อง) คะแนนแบบเร็วสำหรับ move ordering และ iterative deepening ซึ่งไม่ได้อยู่ในสไลด์บทที่ 6', 'Candidate limiting (within 2 steps of a stone), the quick score for move ordering, and iterative deepening, which are not in the Chapter 6 slides.')}</li>
+          <li>{t('การจำกัดตาที่พิจารณา (ห่างหมากไม่เกิน 2 ช่อง) คะแนนแบบเร็วสำหรับ move ordering, iterative deepening และการเขียนโค้ดในรูป negamax ซึ่งไม่ได้อยู่ในสไลด์บทที่ 6', 'Candidate limiting (within 2 steps of a stone), the quick score for move ordering, iterative deepening, and writing the search in negamax form, none of which are in the Chapter 6 slides.')}</li>
           <li>{t('การประมาณเวลาที่ต้องใช้ค้นทั้งต้น (ราว 10⁵⁷ ปี) คำนวณจากขนาด game tree 10⁷⁰ และความเร็วของตัวคำนวณในเว็บนี้ ราว 10⁵ node ต่อวินาที', 'The estimate of the time needed to search the whole tree (about 10⁵⁷ years), computed from a game-tree size of 10⁷⁰ and this site’s engine speed of about 10⁵ nodes per second.')}</li>
           <li>{t('กระดาน แผนภาพ ตัวอย่างรูปแบบหมาก และ demo ทุกชิ้น', 'The board, the diagrams, the pattern examples and every demo.')}</li>
           <li>{t('ตัวเลข 572 แนวคำนวณด้วยโปรแกรมในเว็บนี้และมี unit test ตรวจสอบ ส่วน 549,946 คือจำนวน node ของ game tree ทั้งต้นของ Tic-Tac-Toe ซึ่งหน้าทฤษฎีใช้เปรียบเทียบ', 'The figure of 572 lines is computed by this site’s code and checked by a unit test; 549,946 is the number of nodes in the whole Tic-Tac-Toe game tree, which the Theory page uses for comparison.')}</li>

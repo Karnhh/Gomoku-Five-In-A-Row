@@ -1,6 +1,7 @@
 import { cellLabel } from '@gomoku/shared/rules';
 import { WIN_THRESHOLD } from '../engine/engine.ts';
 import type { SubTree, TreeNode } from '../engine/engine.ts';
+import { useLang } from '../i18n.tsx';
 
 export function fmtScore(v: number): string {
   if (v >= WIN_THRESHOLD) return 'WIN';
@@ -19,6 +20,7 @@ interface Placed { node: TreeNode; x: number; y: number; path: number[]; parent?
 export default function SubTreeView({
   tree, selected, onSelect,
 }: { tree: SubTree; selected: number[]; onSelect: (path: number[]) => void }) {
+  const { t } = useLang();
   const placed: Placed[] = [];
   let slot = 0;
   const kids: Placed[] = [];
@@ -55,7 +57,7 @@ export default function SubTreeView({
           const depth = p.path.length;
           const n = p.node;
           const cls = `tnode d${depth} ${n.pruned ? 'pruned' : ''} ${n.best ? 'best' : ''} ${isSel(p) ? 'sel' : ''} ${n.win ? 'win' : ''}`;
-          const val = n.pruned ? '✂' : fmtScore(n.value ?? 0);
+          const val = n.pruned ? t('ตัด', 'cut') : fmtScore(n.value ?? 0);
           return (
             <g key={`n${p.path.join('-')}`} className={cls} onClick={() => onSelect(p.path)} transform={`translate(${p.x} ${p.y})`}>
               {depth === 0 && <polygon points="0,-18 22,14 -22,14" />}

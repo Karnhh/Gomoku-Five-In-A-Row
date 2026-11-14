@@ -274,6 +274,7 @@ kbd, .ui { display: inline-block; padding: 0 7px; border-radius: 6px; border: 1p
 .tnode.sel polygon, .tnode.sel rect { fill: var(--accent-soft); stroke: var(--accent); }
 .tnode.pruned rect { stroke-dasharray: 3 3; opacity: 0.55; }
 .tnode.pruned text { opacity: 0.55; }
+.tnode.pruned .tval { font-family: var(--font); }
 .tnode.win rect { stroke: var(--good); }
 .tnode .tval { font-family: var(--mono); font-size: 10.5px; font-weight: 600; fill: var(--text); text-anchor: middle; dominant-baseline: central; }
 .tnode.d0 .tval, .tnode.d1 .tval { font-size: 10px; }
@@ -317,6 +318,29 @@ kbd, .ui { display: inline-block; padding: 0 7px; border-radius: 6px; border: 1p
 .big-compare .num.accent { color: var(--accent); }
 .big-compare .lbl { font-size: 13px; color: var(--muted); }
 .big-compare .arrow { font-size: 24px; color: var(--muted); }
+/* step-through minimax / α–β tree */
+.mm-tree { display: block; width: 100%; max-width: 620px; height: auto; margin: 0 auto; }
+.mm-side { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+.mm-edge { stroke: var(--muted); stroke-width: 1.4; }
+.mm-edge.dim { opacity: 0.35; }
+.mm-edge.pruned { stroke-dasharray: 4 4; opacity: 0.35; }
+.mm-edge.best { stroke: var(--accent); stroke-width: 3; opacity: 1; }
+.mm-node polygon, .mm-leaf rect { fill: var(--surface); stroke: var(--muted); stroke-width: 1.4; }
+.mm-node text, .mm-leaf text { font-family: var(--mono); font-size: 13px; font-weight: 600; fill: var(--text); text-anchor: middle; dominant-baseline: central; }
+.mm-node .mm-name { font-family: var(--font); font-size: 14px; font-weight: 700; fill: var(--muted); text-anchor: start; }
+.mm-node.idle polygon { opacity: 0.45; }
+.mm-node.open polygon, .mm-node.focus polygon { stroke: var(--accent); stroke-width: 2.2; }
+.mm-node.focus polygon { fill: var(--accent-soft); }
+.mm-node.final polygon { stroke: var(--accent); stroke-width: 3; fill: var(--accent-soft); }
+.mm-node.cut polygon { stroke-dasharray: 4 4; }
+.mm-leaf.unseen { opacity: 0.4; }
+.mm-leaf.seen rect { stroke: var(--text); }
+.mm-leaf.focus rect { stroke: var(--accent); stroke-width: 2.6; fill: var(--accent-soft); }
+.mm-leaf.pruned { opacity: 0.45; }
+.mm-leaf.pruned rect { stroke-dasharray: 4 4; }
+.mm-leaf.pruned text:not(.mm-cut) { text-decoration: line-through; }
+.mm-leaf .mm-cut { font-family: var(--font); font-size: 11px; font-weight: 600; fill: var(--danger); }
+.step-msg { min-height: 4.8em; margin: 12px 0 4px; padding: 10px 14px; background: var(--surface-2); border-radius: 10px; }
 .data-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 15px; }
 .data-table th, .data-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
 .data-table th { font-size: 13px; color: var(--muted); font-weight: 600; }
