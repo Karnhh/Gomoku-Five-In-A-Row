@@ -19,7 +19,7 @@ The site is bilingual (Thai / English) and supports dark mode.
 | `/patterns` | Pattern library: open four, open three, split three, and the 4-3 / 4-4 / 3-3 forks |
 | `/manual` | User manual |
 | `/references` | Sources |
-| `/room/:code` | Online room (off by default, see below) |
+| `/room/:code` | Online room (needs the backend, see Deploying to Vercel) |
 
 ### Rules
 
@@ -57,18 +57,112 @@ server/   Express + TypeScript
   api/index.js                Vercel entry point (imports the bundle)
 ```
 
-### Deploying the frontend to Vercel
+### Deploying to Vercel
+
+The site is two Vercel projects made from this one repo. The first is enough for everything except online play.
+
+| Project | Root Directory | What it is | Needed for |
+| --- | --- | --- | --- |
+| Frontend | `client` | the website | everything |
+| Backend | `server` | the room API | online play only |
+
+In the examples below the frontend ends up at `https://my-gomoku.vercel.app` and the backend at `https://my-gomoku-api.vercel.app`. Use your own addresses.
+
+#### Part 1: the website (no database needed)
 
 1. Push the repo to GitHub.
-2. Vercel → Add New → Project → pick this repo.
-3. Set **Root Directory = `client`** and Framework Preset = **Vite**.
-4. No environment variables are needed. Deploy.
+2. On Vercel: **Add New → Project** and pick this repo.
+3. Set **Root Directory** to `client` and **Framework Preset** to **Vite**.
+4. Leave everything else alone, add no environment variables, and press **Deploy**.
 
-`client/vercel.json` already has the SPA rewrite, so direct links such as `/theory` work.
+That is all. The site works, and the Play page shows online play as "Coming soon".
 
-### Online mode (off by default)
+#### Part 2: switching online play on
 
-The code is complete but hidden until a server and MongoDB exist. With no configuration, `/play` shows a "Coming soon" card and `/room/:code` redirects to `/play`.
+Do the steps in this order. Turning online play on before the backend exists gives a "Create room" button that fails.
+
+**Step 1. Create the database (MongoDB Atlas)**
+
+1. Create a free **M0** cluster. Any name is fine.
+2. **Database Access:** create a user and keep its password.
+3. **Network Access:** add `0.0.0.0/0`. Vercel's addresses change all the time, so a fixed list does not work.
+4. **Connect → Drivers:** copy the connection string, which starts with `mongodb+srv://`, and put the real password in place of `<db_password>`.
+
+Do not create a database or collection by hand. The server creates everything the first time it is used.
+
+**Step 2. Create the backend project**
+
+1. On Vercel: **Add New → Project** and pick the **same repo** again.
+2. Set **Root Directory** to `server` and **Framework Preset** to **Other**.
+3. Add two environment variables:
+
+   | Name | Value | Type |
+   | --- | --- | --- |
+   | `MONGODB_URI` | the connection string from Step 1 | Secret |
+   | `CLIENT_ORIGIN` | `https://my-gomoku.vercel.app` (the **frontend's** address) | Config |
+
+4. Press **Deploy**.
+
+**Step 3. Check the backend**
+
+Open `https://my-gomoku-api.vercel.app/api/health` in a browser. You should see:
+
+```json
+{"ok":true,"store":"mongodb"}
+```
+
+If you see `"store":"memory"`, the `MONGODB_URI` variable did not arrive. Fix that before going on.
+
+**Step 4. Tell the frontend about the backend**
+
+In the **frontend** project: **Settings → Environment Variables**, add two variables, both of type **Config**:
+
+| Name | Value |
+| --- | --- |
+| `VITE_API_URL` | `https://my-gomoku-api.vercel.app` (the **backend's** address) |
+| `VITE_ONLINE` | `true` |
+
+Vercel warns that `VITE_` values are visible in the browser. For these two that is fine: one is a public address and the other is the word `true`.
+
+**Step 5. Redeploy the frontend**
+
+**Deployments →** the `⋯` menu of the latest one **→ Redeploy**, with the environment set to Production. Without this step nothing changes, because `VITE_` values are fixed into the site when it is built.
+
+Open the Play page: the "Create room" form is there.
+
+#### Rules for the addresses
+
+Most problems come from the two address variables. Each one holds the **other** project's address.
+
+- Start with `https://`.
+- No `/` at the end, and no `/api`.
+- Use the project's short, permanent address (shown under **Domains** on the project's Overview page), not the long address with a random code that every deployment also gets. Those stop matching on the next deployment.
+
+#### After the first deployment
+
+- **A new commit:** just push. Vercel rebuilds and publishes both projects by itself, at the same addresses. Nothing to do on Vercel.
+- **A changed environment variable:** redeploy that project. For the frontend this is always needed; for the backend a redeploy is also the reliable way to pick the change up.
+- **A changed database password:** update `MONGODB_URI` in the backend project and redeploy it.
+- **Switching online play off again:** remove `VITE_ONLINE` from the frontend project and redeploy.
+
+#### If something goes wrong
+
+| What you see | Likely cause |
+| --- | --- |
+| The Play page still says "Coming soon" | the frontend was not redeployed after Step 4, or `VITE_ONLINE` is not exactly `true` |
+| "Create room" says it cannot reach the server | `VITE_API_URL` is wrong, or the backend is not deployed |
+| The browser console shows a CORS error | `CLIENT_ORIGIN` does not match the frontend's address character for character |
+| Creating a room hangs for a long time, then fails | Atlas Network Access lacks `0.0.0.0/0`, or the password inside `MONGODB_URI` is wrong |
+| `/api/health` shows `"store":"memory"` | `MONGODB_URI` is missing from the backend project |
+| Online play works on the main address but not on a preview link | preview addresses are not in `CLIENT_ORIGIN`; add them, separated by commas, if you need them |
+
+#### How the backend build works
+
+Nothing to configure, but for the curious: Vercel cannot run the server's TypeScript directly, because it imports `.ts` files and the `shared/` folder. So the `vercel-build` script (`server/scripts/bundle.mjs`) first packs the server into one file, `server/dist/app.cjs`, and `server/api/index.js` loads it. `server/vercel.json` runs the function in Singapore (`sin1`) to sit next to the database; change the region there if your cluster is somewhere else. To run the same bundle on your machine: `cd server && npm run bundle && npm start` (http://localhost:3001).
+
+### Online mode
+
+Online play is off by default, because it needs the backend and a database. With no configuration, `/play` shows a "Coming soon" card and `/room/:code` redirects to `/play`. It switches on when the website is built with `VITE_ONLINE=true`.
 
 What it offers once enabled:
 
@@ -88,29 +182,7 @@ What it offers once enabled:
 3. Without `server/.env` the server keeps rooms in memory, which is enough for a trial.
 4. Use two browsers (or a normal and a private window): two tabs of the same browser share one token.
 
-**Going live**
-
-1. **MongoDB Atlas.** Create a free M0 cluster and a database user, and allow Network Access from `0.0.0.0/0` (Vercel's addresses change). Nothing has to be created inside the cluster: the server makes the `gomoku` database, its collections and indexes on first use.
-2. **Backend project on Vercel.** Add New → Project → the same repo, then:
-   - Root Directory = `server`, Framework Preset = **Other**; leave the build, output and install settings at their defaults
-   - Environment Variables: `MONGODB_URI` (the Atlas connection string) and `CLIENT_ORIGIN` (the frontend's address, exactly, with `https://` and no trailing `/`; several can be separated by commas)
-3. **Check the backend** by opening `https://<backend>/api/health`. It must answer `{"ok":true,"store":"mongodb"}`. If it says `"store":"memory"`, `MONGODB_URI` did not reach the function.
-4. **Frontend project.** Add `VITE_API_URL` (the backend's address, no trailing `/`) and `VITE_ONLINE=true`, then **Redeploy**: `VITE_` variables are baked in at build time.
-
-How the backend is built: Vercel's function builder cannot run this TypeScript as it is (it imports `.ts` files and the `shared/` workspace), so `npm run vercel-build` first bundles everything into one file, `server/dist/app.cjs`, with `server/scripts/bundle.mjs`; `server/api/index.js` imports it. `server/vercel.json` runs the function in Singapore (`sin1`) to sit next to the database; change it if your cluster is elsewhere.
-
-To try the exact bundle before deploying: `cd server && npm run bundle && npm start` runs it on http://localhost:3001.
-
-If something goes wrong:
-
-| Symptom | Likely cause |
-| --- | --- |
-| The browser console shows a CORS error | `CLIENT_ORIGIN` does not match the frontend's address character for character |
-| Creating a room hangs, then fails | Atlas Network Access does not allow `0.0.0.0/0`, or the password in `MONGODB_URI` is wrong |
-| The page still says "Coming soon" | the frontend was not redeployed after `VITE_ONLINE=true` was added |
-| Preview deployments cannot reach the API | their address is not in `CLIENT_ORIGIN`; only the listed origins are allowed |
-
-Tested: the bundle, run the way Vercel runs it, against a real Atlas cluster. Not tested: an actual Vercel deployment of the backend.
+To put online play on the internet, follow [Deploying to Vercel](#deploying-to-vercel), Part 2.
 
 ### Logging
 
@@ -286,7 +358,7 @@ The theory is based on the Game playing (Chapter 6) lecture slides for Russell &
 | `/patterns` | คลังรูปแบบหมาก: สี่เปิด สามเปิด สามแยก และ fork 4-3 / 4-4 / 3-3 |
 | `/manual` | คู่มือการใช้งาน |
 | `/references` | แหล่งอ้างอิง |
-| `/room/:code` | ห้องออนไลน์ (ปิดไว้เป็นค่าเริ่มต้น ดูด้านล่าง) |
+| `/room/:code` | ห้องออนไลน์ (ต้องมี backend ดูหัวข้อวิธี deploy) |
 
 ### กติกา
 
@@ -324,18 +396,112 @@ server/   Express + TypeScript
   api/index.js                จุดเข้าของ Vercel (import ไฟล์ที่ bundle แล้ว)
 ```
 
-### Deploy frontend บน Vercel
+### วิธี deploy บน Vercel
+
+เว็บนี้คือ Vercel 2 project ที่สร้างจาก repo เดียวกัน project แรกอย่างเดียวก็ใช้ได้ทุกอย่าง ยกเว้นการเล่นออนไลน์
+
+| Project | Root Directory | คืออะไร | จำเป็นสำหรับ |
+| --- | --- | --- | --- |
+| Frontend | `client` | ตัวเว็บ | ทุกอย่าง |
+| Backend | `server` | API ของห้องออนไลน์ | การเล่นออนไลน์เท่านั้น |
+
+ตัวอย่างด้านล่างสมมติว่า frontend อยู่ที่ `https://my-gomoku.vercel.app` และ backend อยู่ที่ `https://my-gomoku-api.vercel.app` ให้ใช้ที่อยู่จริงของคุณแทน
+
+#### ส่วนที่ 1: ตัวเว็บ (ไม่ต้องมีฐานข้อมูล)
 
 1. Push repo ขึ้น GitHub
-2. Vercel → Add New → Project → เลือก repo นี้
-3. ตั้ง **Root Directory = `client`** และ Framework Preset = **Vite**
-4. ไม่ต้องใส่ Environment Variables แล้วกด Deploy
+2. ใน Vercel กด **Add New → Project** แล้วเลือก repo นี้
+3. ตั้ง **Root Directory** เป็น `client` และ **Framework Preset** เป็น **Vite**
+4. ที่เหลือไม่ต้องแก้ ไม่ต้องใส่ Environment Variables แล้วกด **Deploy**
 
-`client/vercel.json` มี rewrite สำหรับ SPA แล้ว ลิงก์ตรงอย่าง `/theory` จึงเปิดได้
+เสร็จแล้ว เว็บใช้งานได้ โดยหน้า "เล่น" จะแสดงการเล่นออนไลน์เป็น "เร็ว ๆ นี้"
 
-### โหมดออนไลน์ (ปิดไว้เป็นค่าเริ่มต้น)
+#### ส่วนที่ 2: เปิดการเล่นออนไลน์
 
-โค้ดพร้อมแล้ว แต่ซ่อนไว้จนกว่าจะมี server และ MongoDB ถ้าไม่ตั้งค่าอะไร หน้า `/play` จะแสดงการ์ด "เร็ว ๆ นี้" และ `/room/:code` จะพากลับไป `/play`
+ทำตามลำดับนี้ ถ้าเปิดโหมดออนไลน์ก่อน backend พร้อม ปุ่ม "สร้างห้อง" จะขึ้นมาแต่กดแล้วใช้ไม่ได้
+
+**ขั้นที่ 1 สร้างฐานข้อมูล (MongoDB Atlas)**
+
+1. สร้าง cluster ฟรีแบบ **M0** ตั้งชื่ออะไรก็ได้
+2. เมนู **Database Access:** สร้าง user หนึ่งคน แล้วเก็บรหัสผ่านไว้
+3. เมนู **Network Access:** เพิ่ม `0.0.0.0/0` เพราะ IP ของ Vercel เปลี่ยนตลอด จะระบุเป็นรายการตายตัวไม่ได้
+4. กด **Connect → Drivers:** copy connection string ที่ขึ้นต้นด้วย `mongodb+srv://` แล้วแทน `<db_password>` ด้วยรหัสผ่านจริง
+
+ไม่ต้องสร้าง database หรือ collection เอง server จะสร้างให้ทั้งหมดตอนถูกใช้ครั้งแรก
+
+**ขั้นที่ 2 สร้าง project backend**
+
+1. ใน Vercel กด **Add New → Project** แล้วเลือก **repo เดิม**อีกครั้ง
+2. ตั้ง **Root Directory** เป็น `server` และ **Framework Preset** เป็น **Other**
+3. ใส่ Environment Variables 2 ตัว:
+
+   | ชื่อ | ค่า | ประเภท |
+   | --- | --- | --- |
+   | `MONGODB_URI` | connection string จากขั้นที่ 1 | Secret |
+   | `CLIENT_ORIGIN` | `https://my-gomoku.vercel.app` (ที่อยู่ของ **frontend**) | Config |
+
+4. กด **Deploy**
+
+**ขั้นที่ 3 ตรวจ backend**
+
+เปิด `https://my-gomoku-api.vercel.app/api/health` ในเบราว์เซอร์ ต้องเห็น:
+
+```json
+{"ok":true,"store":"mongodb"}
+```
+
+ถ้าเห็น `"store":"memory"` แปลว่าตัวแปร `MONGODB_URI` ไปไม่ถึง ให้แก้ก่อนทำขั้นต่อไป
+
+**ขั้นที่ 4 บอก frontend ว่า backend อยู่ที่ไหน**
+
+ที่ project **frontend** เข้า **Settings → Environment Variables** แล้วเพิ่ม 2 ตัว เลือกประเภท **Config** ทั้งคู่:
+
+| ชื่อ | ค่า |
+| --- | --- |
+| `VITE_API_URL` | `https://my-gomoku-api.vercel.app` (ที่อยู่ของ **backend**) |
+| `VITE_ONLINE` | `true` |
+
+Vercel จะเตือนว่าค่าที่ขึ้นต้นด้วย `VITE_` มองเห็นได้จากเบราว์เซอร์ สำหรับสองตัวนี้ไม่เป็นไร ตัวหนึ่งเป็นที่อยู่สาธารณะ อีกตัวเป็นแค่คำว่า `true`
+
+**ขั้นที่ 5 Redeploy frontend**
+
+เข้า **Deployments →** กด `⋯` ที่รายการล่าสุด **→ Redeploy** โดยเลือก environment เป็น Production ถ้าข้ามขั้นนี้ เว็บจะไม่เปลี่ยน เพราะค่า `VITE_` ถูกฝังลงในเว็บตอน build
+
+เปิดหน้า "เล่น" จะเห็นฟอร์ม "สร้างห้อง"
+
+#### กติกาของที่อยู่ (URL)
+
+ปัญหาส่วนใหญ่มาจากตัวแปรที่อยู่สองตัวนี้ จำง่าย ๆ ว่าแต่ละตัวเก็บที่อยู่ของ**อีก project หนึ่ง**
+
+- ขึ้นต้นด้วย `https://`
+- ไม่มี `/` ปิดท้าย และไม่มี `/api`
+- ใช้ที่อยู่หลักแบบสั้นของ project (ดูได้ที่ช่อง **Domains** ในหน้า Overview) ไม่ใช่ที่อยู่ยาวที่มีรหัสสุ่ม ซึ่ง Vercel สร้างให้ทุกครั้งที่ deploy เพราะที่อยู่แบบนั้นจะใช้ไม่ได้ตั้งแต่ deploy รอบถัดไป
+
+#### หลัง deploy ครั้งแรก
+
+- **มี commit ใหม่:** push อย่างเดียวพอ Vercel จะ build และขึ้นเว็บให้ทั้งสอง project เอง ที่อยู่เดิม ไม่ต้องไปทำอะไรที่ Vercel
+- **แก้ Environment Variables:** ต้อง Redeploy project นั้น ฝั่ง frontend ต้องทำทุกครั้ง ส่วนฝั่ง backend การ Redeploy ก็เป็นวิธีที่แน่นอนที่สุดให้ค่าใหม่มีผล
+- **เปลี่ยนรหัสผ่านฐานข้อมูล:** แก้ `MONGODB_URI` ที่ project backend แล้ว Redeploy
+- **ปิดการเล่นออนไลน์:** ลบ `VITE_ONLINE` ออกจาก project frontend แล้ว Redeploy
+
+#### ถ้ามีปัญหา
+
+| อาการ | สาเหตุที่น่าจะเป็น |
+| --- | --- |
+| หน้า "เล่น" ยังขึ้น "เร็ว ๆ นี้" | ยังไม่ได้ Redeploy frontend หลังขั้นที่ 4 หรือค่า `VITE_ONLINE` ไม่ใช่ `true` พอดี |
+| กด "สร้างห้อง" แล้วขึ้นว่าติดต่อ server ไม่ได้ | `VITE_API_URL` ผิด หรือยังไม่ได้ deploy backend |
+| console ของเบราว์เซอร์ขึ้น CORS error | `CLIENT_ORIGIN` ไม่ตรงกับที่อยู่ของ frontend ทุกตัวอักษร |
+| กดสร้างห้องแล้วค้างนาน จากนั้นล้มเหลว | Network Access ของ Atlas ไม่มี `0.0.0.0/0` หรือรหัสผ่านใน `MONGODB_URI` ผิด |
+| `/api/health` ขึ้น `"store":"memory"` | project backend ไม่มีตัวแปร `MONGODB_URI` |
+| เล่นออนไลน์ได้ที่ที่อยู่หลัก แต่ไม่ได้ที่ลิงก์ preview | ที่อยู่ของ preview ไม่อยู่ใน `CLIENT_ORIGIN` ถ้าต้องใช้ ให้เพิ่มโดยคั่นด้วยจุลภาค |
+
+#### backend ถูก build อย่างไร
+
+ไม่ต้องตั้งค่าอะไร แต่อธิบายไว้สำหรับคนที่สงสัย: Vercel รัน TypeScript ของ server ตรง ๆ ไม่ได้ เพราะโค้ด import ไฟล์ `.ts` และโฟลเดอร์ `shared/` สคริปต์ `vercel-build` (`server/scripts/bundle.mjs`) จึงรวม server เป็นไฟล์เดียว `server/dist/app.cjs` ก่อน แล้ว `server/api/index.js` โหลดไฟล์นั้น ส่วน `server/vercel.json` ตั้งให้ฟังก์ชันรันที่สิงคโปร์ (`sin1`) เพื่ออยู่ใกล้ฐานข้อมูล ถ้า cluster ของคุณอยู่ที่อื่น ให้แก้ region ในไฟล์นั้น ถ้าอยากรันไฟล์ที่รวมแล้วบนเครื่อง: `cd server && npm run bundle && npm start` (http://localhost:3001)
+
+### โหมดออนไลน์
+
+การเล่นออนไลน์ปิดไว้เป็นค่าเริ่มต้น เพราะต้องมี backend และฐานข้อมูล ถ้าไม่ตั้งค่าอะไร หน้า `/play` จะแสดงการ์ด "เร็ว ๆ นี้" และ `/room/:code` จะพากลับไป `/play` จะเปิดได้เมื่อ build ตัวเว็บด้วย `VITE_ONLINE=true`
 
 สิ่งที่มีเมื่อเปิดใช้:
 
@@ -355,29 +521,7 @@ server/   Express + TypeScript
 3. ถ้าไม่มี `server/.env` server จะเก็บห้องในหน่วยความจำ ซึ่งพอสำหรับทดลอง
 4. ใช้สองเบราว์เซอร์ (หรือหน้าต่างปกติกับหน้าต่างไม่ระบุตัวตน) เพราะสองแท็บในเบราว์เซอร์เดียวกันจะถือ token เดียวกัน
 
-**เปิดใช้จริง**
-
-1. **MongoDB Atlas** สร้าง cluster ฟรี M0 สร้าง database user และอนุญาต Network Access `0.0.0.0/0` (IP ของ Vercel เปลี่ยนตลอด) ไม่ต้องสร้างอะไรใน cluster เอง server จะสร้างฐานข้อมูล `gomoku` พร้อม collection และ index ให้ตอนใช้ครั้งแรก
-2. **Project backend บน Vercel** Add New → Project → repo เดิม แล้วตั้งค่า:
-   - Root Directory = `server`, Framework Preset = **Other** ส่วน build, output และ install ปล่อยตามค่าเริ่มต้น
-   - Environment Variables: `MONGODB_URI` (connection string ของ Atlas) และ `CLIENT_ORIGIN` (ที่อยู่ของ frontend ตรงทุกตัวอักษร มี `https://` และไม่มี `/` ปิดท้าย ใส่หลายค่าได้โดยคั่นด้วยจุลภาค)
-3. **ตรวจ backend** โดยเปิด `https://<backend>/api/health` ต้องตอบ `{"ok":true,"store":"mongodb"}` ถ้าขึ้น `"store":"memory"` แปลว่า `MONGODB_URI` ไปไม่ถึงฟังก์ชัน
-4. **Project frontend** เพิ่ม `VITE_API_URL` (ที่อยู่ของ backend ไม่มี `/` ปิดท้าย) และ `VITE_ONLINE=true` แล้วกด **Redeploy** เพราะตัวแปร `VITE_` ถูกฝังตอน build
-
-วิธี build ของ backend: ตัว build ฟังก์ชันของ Vercel รัน TypeScript ชุดนี้ตรง ๆ ไม่ได้ (เพราะ import ไฟล์ `.ts` และ workspace `shared/`) `npm run vercel-build` จึงรวมทุกอย่างเป็นไฟล์เดียว `server/dist/app.cjs` ด้วย `server/scripts/bundle.mjs` ก่อน แล้ว `server/api/index.js` import ไฟล์นั้น ส่วน `server/vercel.json` ตั้งให้ฟังก์ชันรันที่สิงคโปร์ (`sin1`) เพื่ออยู่ใกล้ฐานข้อมูล ถ้า cluster อยู่ที่อื่นให้แก้ตาม
-
-ลองไฟล์ที่ bundle แล้วก่อน deploy ได้ด้วย `cd server && npm run bundle && npm start` จะรันที่ http://localhost:3001
-
-ถ้ามีปัญหา:
-
-| อาการ | สาเหตุที่น่าจะเป็น |
-| --- | --- |
-| console ของเบราว์เซอร์ขึ้น CORS error | `CLIENT_ORIGIN` ไม่ตรงกับที่อยู่ของ frontend ทุกตัวอักษร |
-| กดสร้างห้องแล้วค้าง จากนั้นล้มเหลว | Network Access ของ Atlas ไม่ได้อนุญาต `0.0.0.0/0` หรือรหัสผ่านใน `MONGODB_URI` ผิด |
-| หน้าเว็บยังขึ้น "เร็ว ๆ นี้" | ยังไม่ได้ Redeploy frontend หลังเพิ่ม `VITE_ONLINE=true` |
-| Preview deployment เรียก API ไม่ได้ | ที่อยู่ของ preview ไม่อยู่ใน `CLIENT_ORIGIN` ระบบอนุญาตเฉพาะ origin ที่ระบุ |
-
-ทดสอบแล้ว: ไฟล์ที่ bundle รันแบบเดียวกับ Vercel และต่อกับ Atlas จริง ยังไม่ได้ทดสอบ: การ deploy backend บน Vercel จริง
+ถ้าจะเปิดการเล่นออนไลน์บนเว็บจริง ทำตามหัวข้อ [วิธี deploy บน Vercel](#วิธี-deploy-บน-vercel) ส่วนที่ 2
 
 ### การเก็บ log
 
