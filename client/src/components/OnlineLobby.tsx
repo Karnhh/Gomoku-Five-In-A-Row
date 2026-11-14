@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { First } from '@gomoku/shared/room';
 import { createRoom, saveToken } from '../online/api.ts';
 import { useLang } from '../i18n.tsx';
@@ -57,6 +57,13 @@ export default function OnlineLobby() {
       </div>
       <button className="btn primary big" onClick={create} disabled={busy}>{busy ? t('กำลังสร้าง…', 'Creating…') : t('สร้างห้อง', 'Create room')}</button>
       {error && <p className="notice small">{error}</p>}
+      <p className="muted small">
+        {t(
+          'เกมออนไลน์ถูกบันทึกแบบไม่ระบุตัวตนเพื่อการวิเคราะห์: ตาเดิน เวลาที่ใช้ และการใช้คำแนะนำ ไม่มีการเก็บชื่อ IP หรือข้อมูลส่วนตัว',
+          'Online games are logged anonymously for analysis: moves, time taken and use of advice. No names, IP addresses or personal data are stored.',
+        )}{' '}
+        <Link className="inline-link" to="/manual#privacy">{t('รายละเอียด', 'Details')}</Link>
+      </p>
 
       <form className="join-row" onSubmit={(e) => { e.preventDefault(); if (clean.length === 5) navigate(`/room/${clean}`); }}>
         <label className="field">

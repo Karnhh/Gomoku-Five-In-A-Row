@@ -36,3 +36,30 @@ export interface RoomView {
 
 export interface CreateRoomReply { code: string; token: string; color: Player }
 export type JoinRoomReply = { token: string; color: Player } | { spectator: true };
+
+/**
+ * What a player's advisor was showing at the moment they placed a stone.
+ * Sent with each move and stored in the log; the server cannot verify it.
+ */
+export interface AdviceInfo {
+  /** was "show next-move advice" switched on */
+  on: boolean;
+  /** thinking time the player had chosen, in ms */
+  timeMs: number | null;
+  /** rank of the cell they played among the suggestions (1 = the top suggestion); null if it was not suggested */
+  rank: number | null;
+  /** how many suggestions were on screen */
+  shown: number | null;
+  /** search depth the suggestions came from */
+  depth: number | null;
+  /** the top suggestion */
+  best: number | null;
+  /** engine score of the top suggestion */
+  score: number | null;
+  /** how many times the player changed the thinking time before this move */
+  changes: number | null;
+  /** how many times the player pressed "Stop" before this move */
+  stops: number | null;
+  /** had the latest search run its full time when the stone was placed */
+  done: boolean | null;
+}

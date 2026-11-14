@@ -16,7 +16,12 @@ export default function App() {
   const { t } = useLang();
   const { pathname, hash } = useLocation();
 
-  useEffect(() => { if (!hash) window.scrollTo(0, 0); }, [pathname, hash]);
+  // a new page starts at the top; a link with an anchor (such as /manual#privacy) jumps to it
+  useEffect(() => {
+    if (!hash) { window.scrollTo(0, 0); return; }
+    const id = setTimeout(() => document.getElementById(hash.slice(1))?.scrollIntoView(), 0);
+    return () => clearTimeout(id);
+  }, [pathname, hash]);
 
   return (
     <div className="app">
@@ -56,6 +61,7 @@ export default function App() {
         </span>
         <span className="footer-links">
           <Link to="/manual">{t('คู่มือการใช้งาน', 'User manual')}</Link>
+          <Link to="/manual#privacy">{t('ข้อมูลที่เว็บเก็บ', 'What we record')}</Link>
           <Link to="/references">{t('ดูแหล่งอ้างอิง →', 'See references →')}</Link>
         </span>
       </footer>

@@ -6,6 +6,7 @@ import { MongoClient } from 'mongodb';
 import type { Collection } from 'mongodb';
 import type { Player } from '@gomoku/shared/rules';
 import type { Room } from './game.ts';
+import type { GameRecord, LogEvent } from './log.ts';
 
 export interface RoomStore {
   /** false if the code is already taken */
@@ -18,10 +19,17 @@ export interface RoomStore {
   replace(room: Room): Promise<boolean>;
   /** record that a player polled; does not bump the version */
   touch(code: string, color: Player, now: number): Promise<void>;
+  /** append one event to the log */
+  log(event: LogEvent): Promise<void>;
+  /** store the summary of a finished game (once per room + game number) */
+  saveGame(game: GameRecord): Promise<void>;
 }
 
 export class MemoryStore implements RoomStore {
   private rooms = new Map<string, Room>();
+  /** kept in memory so tests (and local development) can inspect them */
+  events: LogEvent[] = [];
+  games: GameRecord[] = [];
 
   async insert(room: Room): Promise<boolean> {
     if (this.rooms.has(room.code)) return false;
@@ -45,10 +53,22 @@ export class MemoryStore implements RoomStore {
     const room = this.rooms.get(code);
     if (room) room.seen[color] = now;
   }
+
+  async log(event: LogEvent): Promise<void> {
+    this.events.push(structuredClone(event));
+  }
+
+  async saveGame(game: GameRecord): Promise<void> {
+    const i = this.games.findIndex((g) => g.code === game.code && g.game === game.game);
+    if (i >= 0) this.games[i] = structuredClone(game);
+    else this.games.push(structuredClone(game));
+  }
 }
 
 export class MongoStore implements RoomStore {
   private col: Promise<Collection<Room>>;
+  private events: Promise<Collection<LogEvent>>;
+  private games: Promise<Collection<GameRecord>>;
 
   constructor(uri: string) {
     // one client per process, reused by every request (vital on serverless)
@@ -58,6 +78,19 @@ export class MongoStore implements RoomStore {
       const col = client.db('gomoku').collection<Room>('rooms');
       await col.createIndex({ code: 1 }, { unique: true });
       await col.createIndex({ updatedAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 });
+      return col;
+    });
+    // logs are kept: no TTL on these two collections
+    this.events = g._gomokuMongo.then(async (client) => {
+      const col = client.db('gomoku').collection<LogEvent>('events');
+      await col.createIndex({ code: 1, game: 1, at: 1 });
+      await col.createIndex({ type: 1, at: 1 });
+      return col;
+    });
+    this.games = g._gomokuMongo.then(async (client) => {
+      const col = client.db('gomoku').collection<GameRecord>('games');
+      await col.createIndex({ code: 1, game: 1 }, { unique: true });
+      await col.createIndex({ endedAt: 1 });
       return col;
     });
   }
@@ -84,6 +117,14 @@ export class MongoStore implements RoomStore {
 
   async touch(code: string, color: Player, now: number): Promise<void> {
     await (await this.col).updateOne({ code }, { $set: { [`seen.${color}`]: now } });
+  }
+
+  async log(event: LogEvent): Promise<void> {
+    await (await this.events).insertOne({ ...event });
+  }
+
+  async saveGame(game: GameRecord): Promise<void> {
+    await (await this.games).replaceOne({ code: game.code, game: game.game }, { ...game }, { upsert: true });
   }
 }
 

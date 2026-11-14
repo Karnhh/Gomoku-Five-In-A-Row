@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { boardFromMoves, cellLabel, other } from '@gomoku/shared/rules';
 import type { Player } from '@gomoku/shared/rules';
-import type { RoomView } from '@gomoku/shared/room';
+import type { AdviceInfo, RoomView } from '@gomoku/shared/room';
 import Board from '../components/Board.tsx';
 import { HintBox, useAdvice } from '../components/Advice.tsx';
-import { ApiError, getRoom, joinRoom, loadToken, saveToken, sendMove, sendRematch, sendResign, sendUndo } from '../online/api.ts';
+import { ApiError, getRoom, joinRoom, saveToken, seatKey, sendMove, sendRematch, sendResign, sendUndo } from '../online/api.ts';
 import { useLang } from '../i18n.tsx';
 
 const POLL_MS = 1000;
@@ -18,7 +18,7 @@ const fmt = (ms: number) => {
 export default function Room() {
   const { t } = useLang();
   const code = (useParams().code ?? '').toUpperCase();
-  const [token, setToken] = useState<string | null>(() => loadToken(code));
+  const [token, setToken] = useState<string>(() => seatKey(code));
   const [joined, setJoined] = useState(false);
   const [room, setRoom] = useState<RoomView | null>(null);
   const [problem, setProblem] = useState<'notfound' | 'network' | null>(null);
@@ -26,8 +26,12 @@ export default function Room() {
   const [pending, setPending] = useState<number | null>(null);
   const [confirm, setConfirm] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [resignAsk, setResignAsk] = useState(false);
   const [hint, setHint] = useState(false);
   const [hintMs, setHintMs] = useState(1000);
+  /** counted from one of my moves to the next, then sent with the move */
+  const timeChanges = useRef(0);
+  const stopPresses = useRef(0);
   const [, setTick] = useState(0);
   /** performance.now() when `room` arrived, to run the clocks between polls */
   const syncedAt = useRef(0);
@@ -40,16 +44,28 @@ export default function Room() {
   }, []);
 
   // take a seat (or learn that we are a spectator), then start polling
+  // Every attempt carries the same seat key, so asking twice (React's development
+  // double-run, a retry after a lost answer, a refresh) always lands on the same seat.
   useEffect(() => {
     let alive = true;
-    joinRoom(code, loadToken(code))
-      .then((r) => {
-        if (!alive) return;
-        if ('token' in r) { saveToken(code, r.token); setToken(r.token); } else setToken(null);
-        setJoined(true);
-      })
-      .catch((e: ApiError) => { if (alive) setProblem(e.status === 404 ? 'notfound' : 'network'); });
-    return () => { alive = false; };
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    const key = seatKey(code);
+    const attempt = () => {
+      joinRoom(code, key)
+        .then((r) => {
+          if (!alive) return;
+          if ('token' in r) { saveToken(code, r.token); setToken(r.token); } else setToken(key);
+          setJoined(true);
+        })
+        .catch((e: ApiError) => {
+          if (!alive) return;
+          if (e.status === 404) { setProblem('notfound'); return; }
+          setProblem('network');
+          retry = setTimeout(attempt, 2000);
+        });
+    };
+    attempt();
+    return () => { alive = false; clearTimeout(retry); };
   }, [code]);
 
   useEffect(() => {
@@ -88,6 +104,7 @@ export default function Room() {
   // a pending tap belongs to one position only
   const moveCount = room?.moves.length ?? 0;
   useEffect(() => setPending(null), [moveCount, room?.game]);
+  useEffect(() => setResignAsk(false), [room?.status, room?.game]);
 
   async function act(fn: () => Promise<RoomView>) {
     if (acting.current) return;
@@ -142,7 +159,24 @@ export default function Room() {
     if (!myTurn || !token) return;
     if (confirm && pending !== cell) { setPending(cell); return; }
     setPending(null);
-    void act(() => sendMove(code, token, cell));
+    // logged with the move: was advice on, for how long, and which rank did the player pick
+    const res = hint ? advice.result : null;
+    const idx = res ? res.moves.findIndex((m) => m.cell === cell) : -1;
+    const info: AdviceInfo = {
+      on: hint,
+      timeMs: hint ? hintMs : null,
+      rank: idx >= 0 ? idx + 1 : null,
+      shown: res ? res.moves.length : hint ? 0 : null,
+      depth: res ? res.depth : null,
+      best: res && res.best >= 0 ? res.best : null,
+      score: res && res.moves.length ? res.score : null,
+      changes: hint ? timeChanges.current : null,
+      stops: hint ? stopPresses.current : null,
+      done: hint ? advice.complete : null,
+    };
+    timeChanges.current = 0;
+    stopPresses.current = 0;
+    void act(() => sendMove(code, token, cell, info));
   };
   const lastMover: Player | null = room.moves.length ? other(room.turn) : null;
   const canAskUndo = playing && you !== null && lastMover === you && room.undoBy === null;
@@ -163,10 +197,18 @@ export default function Room() {
     status = t('เสมอ กระดานเต็ม', 'Draw: the board is full');
   } else {
     const w = room.winner as Player;
-    const why = { five: t('เรียงครบ 5 ตัว', 'five in a row'), time: t('อีกฝ่ายหมดเวลา', 'the other side ran out of time'), resign: t('อีกฝ่ายยอมแพ้', 'the other side resigned'), draw: '' }[room.reason ?? 'five'];
+    const loser = other(w);
+    // say plainly who won and why, from this viewer's side of the board
+    const whoLost = you === null ? colorName(loser) : loser === you ? t('คุณ', 'you') : t('เพื่อน', 'your friend');
+    const why = {
+      five: t('เรียงครบ 5 ตัว', 'five in a row'),
+      time: t(`${whoLost}หมดเวลา`, `${whoLost} ran out of time`),
+      resign: t(`${whoLost}ยอมแพ้`, `${whoLost} resigned`),
+      draw: '',
+    }[room.reason ?? 'five'];
     status = you === null
       ? t(`${colorName(w)}ชนะ · ${why}`, `${colorName(w)} wins · ${why}`)
-      : w === you ? t(`คุณชนะ · ${why}`, `You win · ${why}`) : t(`เพื่อนชนะ · ${why}`, `Your friend wins · ${why}`);
+      : w === you ? t(`คุณชนะ 🎉 · ${why}`, `You win 🎉 · ${why}`) : t(`คุณแพ้ · ${why}`, `You lose · ${why}`);
   }
 
   const playerCard = (c: Player) => (
@@ -249,13 +291,14 @@ export default function Room() {
           {you !== null && token && (
             <div className="play-actions">
               <button className="btn" disabled={!canAskUndo} onClick={() => act(() => sendUndo(code, token, 'request'))}>{t('ขอย้อนตา', 'Ask to undo')}</button>
-              <button
-                className="btn"
-                disabled={!playing}
-                onClick={() => { if (window.confirm(t('ยอมแพ้เกมนี้?', 'Resign this game?'))) void act(() => sendResign(code, token)); }}
-              >
-                {t('ยอมแพ้', 'Resign')}
-              </button>
+              <button className="btn" disabled={!playing || resignAsk} onClick={() => setResignAsk(true)}>{t('ยอมแพ้', 'Resign')}</button>
+            </div>
+          )}
+          {resignAsk && playing && you !== null && (
+            <div className="callout ask danger">
+              <span>{t('ยอมแพ้เกมนี้ใช่ไหม', 'Resign this game?')}</span>
+              <button className="btn sm primary" onClick={() => { setResignAsk(false); void act(() => sendResign(code, token)); }}>{t('ยืนยันยอมแพ้', 'Yes, resign')}</button>
+              <button className="btn sm" onClick={() => setResignAsk(false)}>{t('ยกเลิก', 'Cancel')}</button>
             </div>
           )}
           {notice && <p className="notice small">{notice}</p>}
@@ -266,7 +309,8 @@ export default function Room() {
               on={hint}
               onToggle={setHint}
               timeMs={hintMs}
-              onTime={setHintMs}
+              onTime={(ms) => { if (ms !== hintMs) timeChanges.current++; setHintMs(ms); }}
+              onStop={() => { stopPresses.current++; }}
               advice={advice}
               active={adviceActive}
               idleText={room.status === 'waiting'

@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "node --experimental-strip-types --watch --env-file-if-exists=.env src/local.ts"
+    "dev": "node --experimental-strip-types --watch --env-file-if-exists=.env src/local.ts",
+    "bundle": "node scripts/bundle.mjs",
+    "vercel-build": "node scripts/bundle.mjs",
+    "start": "node scripts/serve-bundle.mjs"
   },
   "dependencies": {
     "@gomoku/shared": "*",
@@ -16,6 +19,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^22.9.0",
+    "esbuild": "^0.21.5",
     "typescript": "^5.6.3"
   }
 }

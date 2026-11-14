@@ -221,6 +221,7 @@ kbd, .ui { display: inline-block; padding: 0 7px; border-radius: 6px; border: 1p
 .play-side .callout { margin: 0; font-size: 15px; }
 .callout.ask { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .callout.ask span { flex: 1 1 160px; }
+.callout.danger { border-left-color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, var(--surface)); }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--border); vertical-align: 1px; margin-left: 4px; }
 .dot.on { background: var(--good); }
 

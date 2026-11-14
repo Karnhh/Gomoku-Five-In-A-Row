@@ -25,6 +25,8 @@ export interface Room {
   winLine: number[] | null;
   /** ms left for [black, white] as of turnStartedAt */
   clock: [number, number];
+  /** epoch ms when the current game started (second player joined, or rematch) */
+  startedAt?: number | null;
   /** epoch ms when the side to move started thinking */
   turnStartedAt: number | null;
   /** colour that asked to take back its last move */
@@ -61,7 +63,7 @@ export function createRoom(code: string, hostToken: string, first: First, minute
   const ms = minutes * 60_000;
   return {
     code, tokens, minutes, moves: [], status: 'waiting', winner: null, reason: null, winLine: null,
-    clock: [ms, ms], turnStartedAt: null, undoBy: null, rematchBy: null,
+    clock: [ms, ms], startedAt: null, turnStartedAt: null, undoBy: null, rematchBy: null,
     seen: { 1: 0, 2: 0, [hostColor]: now } as Room['seen'], game: 1, version: 0, updatedAt: new Date(now),
   };
 }
@@ -71,7 +73,7 @@ export function join(room: Room, token: string, now: number): Result {
   if (room.status !== 'waiting') return fail(409, 'room is full');
   const seat: Player = room.tokens[1] === '' ? 1 : 2;
   const tokens = { ...room.tokens, [seat]: token };
-  return done({ ...room, tokens, status: 'playing', turnStartedAt: now, seen: { ...room.seen, [seat]: now } });
+  return done({ ...room, tokens, status: 'playing', startedAt: now, turnStartedAt: now, seen: { ...room.seen, [seat]: now } });
 }
 
 /** Time left right now for [black, white]. */
@@ -144,7 +146,7 @@ export function rematch(room: Room, color: Player, now: number): Result {
     tokens: { 1: room.tokens[2], 2: room.tokens[1] },
     seen: { 1: room.seen[2], 2: room.seen[1] },
     moves: [], status: 'playing', winner: null, reason: null, winLine: null,
-    clock: [ms, ms], turnStartedAt: now, undoBy: null, rematchBy: null, game: room.game + 1,
+    clock: [ms, ms], startedAt: now, turnStartedAt: now, undoBy: null, rematchBy: null, game: room.game + 1,
   });
 }
 

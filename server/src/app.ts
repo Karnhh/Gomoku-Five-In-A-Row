@@ -11,7 +11,15 @@ export function createApp(store: RoomStore = defaultStore(), clock: () => number
   if (process.env.CLIENT_ORIGIN) origins.push(...process.env.CLIENT_ORIGIN.split(',').map((s) => s.trim()));
   app.use(cors({ origin: origins }));
   app.use(express.json({ limit: '10kb' }));
-  app.get('/api/health', (_req, res) => { res.json({ ok: true, store: process.env.MONGODB_URI ? 'mongodb' : 'memory' }); });
+  app.get('/api/health', (_req, res) => {
+    const persistent = !!process.env.MONGODB_URI;
+    // A serverless function keeps nothing in memory between requests, so on Vercel
+    // the in-memory fallback would lose every room. Say so instead of failing quietly.
+    const warning = !persistent && process.env.VERCEL
+      ? 'MONGODB_URI is not set: rooms are kept in memory and will be lost between requests'
+      : undefined;
+    res.json({ ok: true, store: persistent ? 'mongodb' : 'memory', ...(warning ? { warning } : {}) });
+  });
   app.use('/api/rooms', roomsRouter(store, clock));
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     console.error(err);

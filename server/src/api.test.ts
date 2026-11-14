@@ -8,11 +8,12 @@ import { createApp } from './app.ts';
 import { MemoryStore } from './store.ts';
 
 let server: Server;
+const store = new MemoryStore();
 let base = '';
 let now = 1_000_000;
 
 before(async () => {
-  const app = createApp(new MemoryStore(), () => now);
+  const app = createApp(store, () => now);
   await new Promise<void>((resolve) => { server = app.listen(0, resolve); });
   base = `http://localhost:${(server.address() as AddressInfo).port}/api`;
 });
@@ -129,4 +130,128 @@ test('presence: a player who stops polling shows as offline', async () => {
 test('bad options fall back to defaults', async () => {
   const { code, token } = (await call('POST', '/rooms', undefined, { first: 'banana', minutes: 999 })).body;
   assert.equal((await call('GET', `/rooms/${code}`, token)).body.minutes, 5);
+});
+
+test('every stone placed is logged, with what the advisor was showing', async () => {
+  const { code, token: host } = (await call('POST', '/rooms', undefined, { first: 'me', minutes: 5 })).body;
+  const guest = (await call('POST', `/rooms/${code}/join`)).body.token;
+  const mine = () => store.events.filter((e) => e.code === code);
+
+  // black follows the top suggestion after 3 s of thinking
+  now += 3000;
+  await call('POST', `/rooms/${code}/move`, host, {
+    cell: L('H8'), advice: { on: true, timeMs: 1000, rank: 1, shown: 14, depth: 7, best: L('H8'), score: 296, changes: 0, stops: 0, done: true },
+  });
+  // white plays with advice off, and sends junk that must not reach the log
+  now += 2000;
+  await call('POST', `/rooms/${code}/move`, guest, { cell: L('H9'), advice: { on: false, rank: 3, token: 'secret' } });
+  // black ignores the suggestions: the cell was not on the list
+  now += 1000;
+  await call('POST', `/rooms/${code}/move`, host, {
+    // changed the time twice, pressed Stop once, and moved before the search finished
+    cell: L('A1'), advice: { on: true, timeMs: 10000, rank: null, shown: 14, depth: 9, best: L('G8'), score: -40.6, changes: 2, stops: 1, done: false },
+  });
+  // no advice field at all (an old client)
+  await call('POST', `/rooms/${code}/move`, guest, { cell: L('H10') });
+  // a rejected move is not logged
+  await call('POST', `/rooms/${code}/move`, guest, { cell: L('H11') });
+
+  const moves = mine().filter((e) => e.type === 'move');
+  assert.equal(moves.length, 4);
+  assert.deepEqual(moves.map((e) => [e.ply, e.label, e.color]), [[1, 'H8', 1], [2, 'H9', 2], [3, 'A1', 1], [4, 'H10', 2]]);
+  assert.deepEqual(moves[0].advice, { on: true, timeMs: 1000, rank: 1, shown: 14, depth: 7, best: L('H8'), score: 296, changes: 0, stops: 0, done: true });
+  assert.equal(moves[0].thinkMs, 3000);
+  assert.deepEqual(moves[1].advice, { on: false, timeMs: null, rank: null, shown: null, depth: null, best: null, score: null, changes: null, stops: null, done: null });
+  assert.equal(moves[1].thinkMs, 2000);
+  assert.equal(moves[2].advice?.rank, null);
+  assert.equal(moves[2].advice?.timeMs, 10000);
+  assert.equal(moves[2].advice?.score, -41);
+  assert.deepEqual([moves[2].advice?.changes, moves[2].advice?.stops, moves[2].advice?.done], [2, 1, false]);
+  assert.equal(moves[2].adviceBest, 'G8');
+  assert.equal(moves[3].advice?.on, false);
+  assert.deepEqual(moves[0].clock, [297_000, 300_000]);
+
+  // undo request + accept, then resign: all in the log, in order, and nothing leaks a token
+  await call('POST', `/rooms/${code}/undo`, guest, { action: 'request' });
+  await call('POST', `/rooms/${code}/undo`, host, { action: 'accept' });
+  await call('POST', `/rooms/${code}/resign`, host);
+  assert.deepEqual(mine().map((e) => e.type), [
+    'create', 'join', 'move', 'move', 'move', 'move', 'undo_request', 'undo_accept', 'resign', 'finish',
+  ]);
+  const text = JSON.stringify(mine());
+  assert.equal(text.includes(host) || text.includes(guest) || text.includes('secret'), false);
+
+  const game = store.games.find((g) => g.code === code)!;
+  assert.deepEqual(game.labels, ['H8', 'H9', 'A1']); // the undone H10 is gone from the final record
+  assert.equal(game.winner, 2);
+  assert.equal(game.reason, 'resign');
+  assert.equal(game.game, 1);
+  assert.equal(game.durationMs, 6000);
+
+  // a rematch is logged and the second game gets its own record
+  await call('POST', `/rooms/${code}/rematch`, host);
+  await call('POST', `/rooms/${code}/rematch`, host); // asking twice logs once
+  await call('POST', `/rooms/${code}/rematch`, guest);
+  assert.deepEqual(mine().slice(-2).map((e) => [e.type, e.game]), [['rematch_request', 1], ['rematch_start', 2]]);
+});
+
+test('a game lost on time is logged even though nobody moved', async () => {
+  const { code, token: host } = (await call('POST', '/rooms', undefined, { first: 'me', minutes: 3 })).body;
+  await call('POST', `/rooms/${code}/join`);
+  now += 200_000;
+  await call('GET', `/rooms/${code}`, host);
+  await call('GET', `/rooms/${code}`, host); // a second poll must not log it twice
+  const types = store.events.filter((e) => e.code === code).map((e) => e.type);
+  assert.deepEqual(types, ['create', 'join', 'timeout', 'finish']);
+  const game = store.games.find((g) => g.code === code)!;
+  assert.equal(game.reason, 'time');
+  assert.equal(game.winner, 2);
+  assert.equal(game.plies, 0);
+});
+
+test('joining is repeatable: the same browser key always gets the same seat', async () => {
+  const { code } = (await call('POST', '/rooms', undefined, { first: 'me', minutes: 0 })).body;
+  const key = 'a'.repeat(32);
+  // the page asks twice (as React does in development) before either answer arrives
+  const [a, b] = await Promise.all([call('POST', `/rooms/${code}/join`, key), call('POST', `/rooms/${code}/join`, key)]);
+  assert.deepEqual(a.body, { token: key, color: 2 });
+  assert.deepEqual(b.body, { token: key, color: 2 });
+  // and again later (a refresh, or a retry after a lost answer)
+  assert.deepEqual((await call('POST', `/rooms/${code}/join`, key)).body, { token: key, color: 2 });
+  // that key really holds the seat
+  assert.equal((await call('GET', `/rooms/${code}`, key)).body.you, 2);
+  // a different browser finds the room full
+  assert.deepEqual((await call('POST', `/rooms/${code}/join`, 'b'.repeat(32))).body, { spectator: true });
+  assert.equal((await call('GET', `/rooms/${code}`, 'b'.repeat(32))).body.you, null);
+  // only one join was logged
+  assert.equal(store.events.filter((e) => e.code === code && e.type === 'join').length, 1);
+});
+
+test('a malformed browser key is replaced by a server-made token', async () => {
+  const { code } = (await call('POST', '/rooms', undefined, { first: 'me', minutes: 0 })).body;
+  const r = (await call('POST', `/rooms/${code}/join`, 'short')).body;
+  assert.equal(r.color, 2);
+  assert.match(r.token, /^[0-9a-f]{32}$/);
+  assert.notEqual(r.token, 'short');
+});
+
+test('either player can resign at any time, on their turn or not', async () => {
+  for (const who of ['host', 'guest'] as const) {
+    const { code, token: host } = (await call('POST', '/rooms', undefined, { first: 'me', minutes: 0 })).body;
+    const guest = (await call('POST', `/rooms/${code}/join`)).body.token;
+    // black (host) is to move; with one stone down it is white's turn
+    if (who === 'guest') await call('POST', `/rooms/${code}/move`, host, { cell: L('H8') });
+    const quitter = who === 'host' ? host : guest;
+    // a pending undo request must not block resigning
+    if (who === 'guest') await call('POST', `/rooms/${code}/undo`, host, { action: 'request' });
+    const r = await call('POST', `/rooms/${code}/resign`, quitter);
+    assert.equal(r.status, 200);
+    assert.equal(r.body.status, 'finished');
+    assert.equal(r.body.winner, who === 'host' ? 2 : 1);
+  }
+  // the player who is NOT to move can resign too
+  const { code, token: host } = (await call('POST', '/rooms', undefined, { first: 'me', minutes: 0 })).body;
+  const guest = (await call('POST', `/rooms/${code}/join`)).body.token;
+  assert.equal((await call('POST', `/rooms/${code}/resign`, guest)).body.winner, 1);
+  assert.equal((await call('GET', `/rooms/${code}`, host)).body.reason, 'resign');
 });

@@ -13,7 +13,8 @@ export default function Manual() {
     ['score', t('5. อ่านคะแนน', '5. Reading the score')],
     ['tree', t('6. Tree ย่อย', '6. Sub-tree')],
     ['other', t('7. หน้าอื่น ๆ', '7. Other pages')],
-    ['faq', t('8. คำถามที่พบบ่อย', '8. FAQ')],
+    ['privacy', t('8. ข้อมูลที่เว็บเก็บ', '8. What the site records')],
+    ['faq', t('9. คำถามที่พบบ่อย', '9. FAQ')],
   ];
   return (
     <main className="page manual-page">
@@ -85,7 +86,7 @@ export default function Manual() {
         <p className="muted small">{t('ทั้งสองคนเห็นคำแนะนำเดียวกัน เพราะใช้จอเดียวกัน และนาฬิกายังเดินระหว่างที่ตัวช่วยคิด', 'Both players see the same advice, since they share a screen, and the clock keeps running while the advisor thinks.')}</p>
         <div className="callout note">
           {ONLINE_ENABLED
-            ? t('เล่นออนไลน์: สร้างห้องจากหน้า "เล่น" แล้วส่งรหัส 5 ตัวหรือลิงก์ให้เพื่อน ในห้องออนไลน์เปิดคำแนะนำตาต่อไปได้เช่นกัน โดยจะแสดงเฉพาะตาของคุณและเฉพาะบนเครื่องของคุณ เพื่อนไม่เห็น', 'Online: create a room from the "Play" page and send the 5-character code or the link to your friend. Next-move advice works in an online room too: it shows on your turns only and on your device only, so your friend does not see it.')
+            ? t('เล่นออนไลน์: สร้างห้องจากหน้า "เล่น" แล้วส่งรหัส 5 ตัวหรือลิงก์ให้เพื่อน ในห้องออนไลน์เปิดคำแนะนำตาต่อไปได้เช่นกัน โดยจะแสดงเฉพาะตาของคุณและเฉพาะบนเครื่องของคุณ เพื่อนไม่เห็น เกมออนไลน์ถูกบันทึกแบบไม่ระบุตัวตนเพื่อการวิเคราะห์ (ตาเดิน เวลาที่ใช้ และการใช้คำแนะนำ)', 'Online: create a room from the "Play" page and send the 5-character code or the link to your friend. Next-move advice works in an online room too: it shows on your turns only and on your device only, so your friend does not see it. Online games are logged anonymously for analysis (moves, time taken and use of advice).')
             : t('การเล่นออนไลน์จากคนละเครื่องด้วยรหัสห้องยังไม่เปิดให้ใช้', 'Playing online from two devices with a room code is not open yet.')}
         </div>
       </section>
@@ -147,8 +148,47 @@ export default function Manual() {
         </ul>
       </section>
 
+      <section className="t-section" id="privacy">
+        <h2>{t('8. ข้อมูลที่เว็บเก็บ', '8. What the site records')}</h2>
+        <p>
+          {t(
+            'เว็บนี้เก็บ log เฉพาะการเล่นเกมออนไลน์ เพื่อดูสถิติว่าเกมถูกเล่นอย่างไร ไม่มีการเก็บข้อมูลส่วนตัว',
+            'This site keeps a log of online games only, to see how the game is played. It does not store personal data.',
+          )}
+        </p>
+        <h3>{t('สิ่งที่บันทึก (เฉพาะเกมออนไลน์)', 'What is recorded (online games only)')}</h3>
+        <ul className="t-list">
+          <li>{t('การวางหมากทุกตา: ช่องที่วาง สีหมาก ลำดับตา และเวลาที่ใช้คิด', 'Every stone placed: the point, the colour, the move number and the time spent thinking.')}</li>
+          <li>{t('การใช้คำแนะนำตาต่อไป: เปิดหรือปิด เวลาคิดที่เลือก อันดับของตาที่เลือกวาง จำนวนครั้งที่เปลี่ยนเวลาคิด และจำนวนครั้งที่กดหยุดคิด', 'Use of next-move advice: on or off, the thinking time chosen, the rank of the move played, how many times the thinking time was changed and how many times Stop was pressed.')}</li>
+          <li>{t('เหตุการณ์ในห้อง: สร้างห้อง เข้าห้อง ขอย้อนตาและคำตอบ ยอมแพ้ หมดเวลา ขอเล่นอีกครั้ง และผลของเกม', 'Room events: creating and joining, undo requests and answers, resignation, running out of time, rematch requests and the result.')}</li>
+          <li>{t('การตั้งค่าห้อง: เวลาคิดต่อคน และใครเดินก่อน', 'Room settings: thinking time per player and who moves first.')}</li>
+        </ul>
+        <h3>{t('สิ่งที่ไม่บันทึก', 'What is not recorded')}</h3>
+        <ul className="t-list">
+          <li>{t('ชื่อ อีเมล หรือบัญชีผู้ใช้ เว็บนี้ไม่มีระบบสมัครสมาชิก', 'Names, e-mail addresses or accounts. The site has no sign-up.')}</li>
+          <li>{t('IP address และข้อมูลอุปกรณ์หรือเบราว์เซอร์', 'IP addresses, and device or browser details.')}</li>
+          <li>{t('เกมที่เล่นสองคนบนเครื่องเดียว และการใช้หน้า "ตาต่อไป" ทั้งสองอย่างทำงานในเบราว์เซอร์ของคุณเท่านั้น ไม่ได้ส่งออกไปที่ใด', 'Games played by two people on one device, and use of the "Next move" page. Both run only in your browser and nothing is sent anywhere.')}</li>
+        </ul>
+        <h3>{t('สิ่งที่เก็บในเบราว์เซอร์ของคุณ', 'What is kept in your browser')}</h3>
+        <ul className="t-list">
+          <li>{t('ภาษาที่เลือก (ไทยหรืออังกฤษ)', 'The language you chose (Thai or English).')}</li>
+          <li>{t('รหัสยืนยันที่นั่งของห้องออนไลน์ที่คุณเข้า เพื่อให้รีเฟรชหน้าแล้วเล่นต่อได้ รหัสนี้สุ่มขึ้นใหม่ทุกห้องและไม่ผูกกับตัวคุณ', 'A seat key for each online room you join, so a refresh keeps your seat. It is random for every room and is not tied to you.')}</li>
+        </ul>
+        <p className="muted small">
+          {t(
+            'log ผูกกับรหัสห้องแบบสุ่มเท่านั้น จึงระบุตัวผู้เล่นไม่ได้ ห้องที่ไม่มีการเล่นจะถูกลบใน 24 ชั่วโมง ส่วน log ถูกเก็บไว้เพื่อการวิเคราะห์ ผู้ให้บริการโฮสต์เว็บและฐานข้อมูลประมวลผล IP เพื่อรับส่งข้อมูลตามปกติของอินเทอร์เน็ต แต่เว็บนี้ไม่ได้บันทึก IP ลงใน log ของตัวเอง',
+            'The log is tied only to a random room code, so it cannot identify a player. Idle rooms are deleted after 24 hours; the log is kept for analysis. The hosting and database providers handle IP addresses to deliver traffic, as on any website, but this site does not write IP addresses into its own log.',
+          )}
+        </p>
+        {!ONLINE_ENABLED && (
+          <div className="callout note">
+            {t('ตอนนี้โหมดออนไลน์ยังไม่เปิด จึงยังไม่มีการบันทึกใด ๆ', 'Online play is not open yet, so nothing is being recorded at the moment.')}
+          </div>
+        )}
+      </section>
+
       <section className="t-section" id="faq">
-        <h2>{t('8. คำถามที่พบบ่อย', '8. FAQ')}</h2>
+        <h2>{t('9. คำถามที่พบบ่อย', '9. FAQ')}</h2>
         <h3>{t('ทำไมคะแนนของตำแหน่งเดิมเปลี่ยนไปมา', 'Why does the score of the same position change?')}</h3>
         <p>{t('คะแนนขึ้นกับความลึกที่ค้นได้ ความลึกคี่มักให้คะแนนสูงกว่าความลึกคู่ ควรเทียบคะแนนจากการคิดรอบเดียวกันเท่านั้น ส่วนอันดับของตามักคงเดิม', 'The score depends on the depth reached, and odd depths tend to score higher than even ones. Only compare scores from the same run; the ranking of moves is usually stable.')}</p>
         <h3>{t('ทำไมตัวช่วยไม่แนะนำตาที่อยู่ไกลจากหมาก', 'Why does the advisor never suggest a far-away move?')}</h3>

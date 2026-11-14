@@ -137,7 +137,7 @@ export default function Play() {
               <span className="field-label">{t('ใครเดินก่อน (ถือหมากดำ)', 'Who moves first (plays black)')}</span>
               <div className="seg">
                 {firstOptions.map(([v, label]) => (
-                  <button key={v} className={settings.first === v ? 'on' : ''} onClick={() => setSettings({ ...settings, first: v })}>{label}</button>
+                  <button key={v} className={settings.first === v ? 'on' : ''} onClick={() => setSettings((s) => ({ ...s, first: v }))}>{label}</button>
                 ))}
               </div>
             </div>
@@ -145,18 +145,18 @@ export default function Play() {
               <span className="field-label">{t('เวลาคิดรวมของแต่ละคน', 'Total thinking time per player')}</span>
               <div className="seg">
                 {[0, 3, 5, 10].map((m) => (
-                  <button key={m} className={settings.minutes === m ? 'on' : ''} onClick={() => setSettings({ ...settings, minutes: m })}>
+                  <button key={m} className={settings.minutes === m ? 'on' : ''} onClick={() => setSettings((s) => ({ ...s, minutes: m }))}>
                     {m === 0 ? t('ไม่จับเวลา', 'No clock') : t(`${m} นาที`, `${m} min`)}
                   </button>
                 ))}
               </div>
             </div>
             <label className="check">
-              <input type="checkbox" checked={settings.hint} onChange={(e) => setSettings({ ...settings, hint: e.target.checked })} />
+              <input type="checkbox" checked={settings.hint} onChange={(e) => setSettings((s) => ({ ...s, hint: e.target.checked }))} />
               <span>{t('แสดงคำแนะนำตาต่อไป (เปิดหรือปิดระหว่างเล่นได้)', 'Show next-move advice (can be switched during play)')}</span>
             </label>
             <label className="check">
-              <input type="checkbox" checked={settings.confirm} onChange={(e) => setSettings({ ...settings, confirm: e.target.checked })} />
+              <input type="checkbox" checked={settings.confirm} onChange={(e) => setSettings((s) => ({ ...s, confirm: e.target.checked }))} />
               <span>{t('แตะสองครั้งเพื่อยืนยันการวางหมาก', 'Tap twice to confirm a move')}</span>
             </label>
             <button className="btn primary big" onClick={start}>{t('เริ่มเกม', 'Start game')}</button>
@@ -236,9 +236,9 @@ export default function Play() {
           <div className={`status ${res ? 'over' : ''}`} role="status" aria-live="polite">{status}</div>
           <HintBox
             on={hint}
-            onToggle={(on) => setSettings({ ...settings, hint: on })}
+            onToggle={(on) => setSettings((s) => ({ ...s, hint: on }))}
             timeMs={hintMs}
-            onTime={(ms) => setSettings({ ...settings, hintMs: ms })}
+            onTime={(ms) => setSettings((s) => ({ ...s, hintMs: ms }))}
             advice={advice}
             active={running && hint}
             note={t(
