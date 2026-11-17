@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { boardFromMoves, cellLabel, other } from '@gomoku/shared/rules';
+import { boardFromMoves, cellLabel, emptyBoard, other } from '@gomoku/shared/rules';
 import type { Player } from '@gomoku/shared/rules';
 import type { AdviceInfo, RoomView } from '@gomoku/shared/room';
 import Board from '../components/Board.tsx';
 import { HintBox, useAdvice } from '../components/Advice.tsx';
-import { ApiError, getRoom, joinRoom, saveToken, seatKey, sendMove, sendRematch, sendResign, sendUndo } from '../online/api.ts';
+import { ApiError, getRoom, joinRoom, saveToken, seatKey, sendMove, sendPause, sendRematch, sendResign, sendUndo } from '../online/api.ts';
 import { useLang } from '../i18n.tsx';
 
 const POLL_MS = 1000;
+/** shown instead of the position during a time-out, so nobody can study it */
+const HIDDEN_BOARD = emptyBoard();
 
 const fmt = (ms: number) => {
   const s = Math.max(0, Math.ceil(ms / 1000));
@@ -27,6 +29,8 @@ export default function Room() {
   const [confirm, setConfirm] = useState(true);
   const [copied, setCopied] = useState(false);
   const [resignAsk, setResignAsk] = useState(false);
+  const [pauseAsk, setPauseAsk] = useState(false);
+  const [pauseSeconds, setPauseSeconds] = useState(30);
   const [hint, setHint] = useState(false);
   const [hintMs, setHintMs] = useState(1000);
   /** counted from one of my moves to the next, then sent with the move */
@@ -83,7 +87,8 @@ export default function Room() {
   }, [joined, code, token, accept]);
 
   // repaint the running clock a few times a second
-  const ticking = room?.status === 'playing' && room.minutes > 0;
+  // (a time-out counts down too, even in a game without clocks)
+  const ticking = room?.status === 'playing' && (room.minutes > 0 || !!room.pause);
   useEffect(() => {
     if (!ticking) return;
     const id = setInterval(() => setTick((n) => n + 1), 250);
@@ -98,13 +103,13 @@ export default function Room() {
   // Advice is private to this device: a player gets it on their own turn only,
   // a spectator for whoever is to move. The engine runs here, not on the server.
   const adviceTurn: Player = room?.turn ?? 1;
-  const adviceActive = hint && room?.status === 'playing' && (room.you === null || room.you === room.turn);
+  const adviceActive = hint && room?.status === 'playing' && room.pause?.state !== 'on' && (room.you === null || room.you === room.turn);
   const advice = useAdvice(board, adviceTurn, adviceActive, hintMs);
 
   // a pending tap belongs to one position only
   const moveCount = room?.moves.length ?? 0;
   useEffect(() => setPending(null), [moveCount, room?.game]);
-  useEffect(() => setResignAsk(false), [room?.status, room?.game]);
+  useEffect(() => { setResignAsk(false); setPauseAsk(false); }, [room?.status, room?.game]);
 
   async function act(fn: () => Promise<RoomView>) {
     if (acting.current) return;
@@ -148,12 +153,18 @@ export default function Room() {
 
   const you = room.you;
   const playing = room.status === 'playing';
-  const myTurn = playing && you === room.turn;
+  // time-out: count down locally between polls
+  const pause = room.pause;
+  const pauseLeft = pause ? pause.msLeft - (performance.now() - syncedAt.current) : 0;
+  const pauseOn = playing && pause?.state === 'on' && pauseLeft > 0;
+  const pauseAsked = playing && pause?.state === 'asked' && pauseLeft > 0;
+  const pauseSecs = Math.max(1, Math.ceil(pauseLeft / 1000));
+  const myTurn = playing && you === room.turn && !pauseOn;
   const colorName = (c: Player) => (c === 1 ? t('ดำ', 'Black') : t('ขาว', 'White'));
   const who = (c: Player) => (you === null ? colorName(c) : c === you ? t('คุณ', 'You') : t('เพื่อน', 'Friend'));
 
   const clock: [number, number] = [room.clock[0], room.clock[1]];
-  if (ticking) clock[room.turn - 1] = Math.max(0, clock[room.turn - 1] - (performance.now() - syncedAt.current));
+  if (playing && room.minutes > 0 && !pauseOn) clock[room.turn - 1] = Math.max(0, clock[room.turn - 1] - (performance.now() - syncedAt.current));
 
   const tap = (cell: number) => {
     if (!myTurn || !token) return;
@@ -227,11 +238,11 @@ export default function Room() {
       <div className="play-layout">
         <div className="play-board">
           <Board
-            board={board}
+            board={pauseOn ? HIDDEN_BOARD : board}
             onPlay={myTurn ? tap : undefined}
-            lastMove={room.moves[room.moves.length - 1] ?? null}
+            lastMove={pauseOn ? null : room.moves[room.moves.length - 1] ?? null}
             winLine={room.winLine}
-            heat={advice.heat}
+            heat={pauseOn ? undefined : advice.heat}
             pending={pending !== null && myTurn ? { cell: pending, color: room.turn } : null}
             label={t('กระดานหมากห้าตัว', 'Five-in-a-row board')}
           />
@@ -243,6 +254,14 @@ export default function Room() {
             <button className="btn sm" onClick={copy}>{copied ? t('คัดลอกแล้ว', 'Copied') : t('คัดลอกลิงก์', 'Copy link')}</button>
             {you === null && <span className="pill">{t('กำลังดู', 'Watching')}</span>}
           </div>
+          {room.spectators > 0 && (
+            <p className="spectators small">
+              <i className="eye" aria-hidden="true" />
+              {you === null
+                ? t(`ผู้ชมทั้งหมด ${room.spectators} คน (รวมคุณ)`, `${room.spectators} watching (including you)`)
+                : t(`มีผู้ชมกำลังดูอยู่ ${room.spectators} คน`, `${room.spectators} ${room.spectators === 1 ? 'spectator is' : 'spectators are'} watching`)}
+            </p>
+          )}
 
           {room.status === 'waiting' && (
             <div className="callout">
@@ -275,6 +294,26 @@ export default function Room() {
             <div className="callout ask">{t(`${colorName(room.undoBy)}ขอย้อนตา`, `${colorName(room.undoBy)} asked to take back a move`)}</div>
           )}
 
+          {pauseAsked && pause && (
+            you === null ? (
+              <div className="callout ask">{t(`${colorName(pause.by)}ขอเวลานอก ${pause.seconds} วินาที`, `${colorName(pause.by)} asked for a ${pause.seconds}-second time-out`)}</div>
+            ) : pause.by === you ? (
+              <div className="callout ask">
+                <span>{t(`ขอเวลานอก ${pause.seconds} วินาทีแล้ว รอเพื่อนตอบ (${pauseSecs})`, `Asked for a ${pause.seconds}-second time-out. Waiting for your friend (${pauseSecs})`)}</span>
+                <button className="btn sm" onClick={() => act(() => sendPause(code, token, 'cancel'))}>{t('ยกเลิกคำขอ', 'Cancel')}</button>
+              </div>
+            ) : (
+              <div className="callout ask">
+                <span>
+                  {t(`เพื่อนขอเวลานอก ${pause.seconds} วินาที ตอบภายใน ${pauseSecs} วินาที`, `Your friend asks for a ${pause.seconds}-second time-out. Answer within ${pauseSecs} s`)}
+                  <br /><small className="muted">{t('เกมยังเดินต่อระหว่างนี้', 'Play goes on meanwhile.')}</small>
+                </span>
+                <button className="btn sm primary" onClick={() => act(() => sendPause(code, token, 'accept'))}>{t('ตกลง', 'Agree')}</button>
+                <button className="btn sm" onClick={() => act(() => sendPause(code, token, 'decline'))}>{t('ปฏิเสธ', 'Refuse')}</button>
+              </div>
+            )
+          )}
+
           {room.status === 'finished' && you !== null && token && (
             <div className="callout ask">
               {room.rematchBy === you
@@ -292,6 +331,22 @@ export default function Room() {
             <div className="play-actions">
               <button className="btn" disabled={!canAskUndo} onClick={() => act(() => sendUndo(code, token, 'request'))}>{t('ขอย้อนตา', 'Ask to undo')}</button>
               <button className="btn" disabled={!playing || resignAsk} onClick={() => setResignAsk(true)}>{t('ยอมแพ้', 'Resign')}</button>
+              <button className="btn wide" disabled={!playing || pauseAsk || pauseAsked || pauseOn} onClick={() => setPauseAsk(true)}>{t('ขอเวลานอก', 'Ask for a time-out')}</button>
+            </div>
+          )}
+          {pauseAsk && playing && you !== null && !pauseAsked && !pauseOn && (
+            <div className="callout ask pause-form">
+              <label className="pause-range">
+                <span>{t(`ขอหยุดเวลา ${pauseSeconds} วินาที`, `Stop the clocks for ${pauseSeconds} seconds`)}</span>
+                <input
+                  type="range" min={5} max={60} step={5} value={pauseSeconds}
+                  onChange={(e) => setPauseSeconds(Number(e.target.value))}
+                  aria-label={t('ความยาวของเวลานอก (วินาที)', 'Length of the time-out (seconds)')}
+                />
+                <small className="muted">{t('เพื่อนมีเวลา 5 วินาทีในการตอบ ระหว่างนั้นเกมเดินต่อตามปกติ ถ้าเพื่อนตกลง นาฬิกาทั้งสองฝ่ายจะหยุดและกระดานจะถูกซ่อน', 'Your friend has 5 seconds to answer, and play goes on meanwhile. If they agree, both clocks stop and the board is hidden.')}</small>
+              </label>
+              <button className="btn sm primary" onClick={() => { setPauseAsk(false); void act(() => sendPause(code, token, 'request', pauseSeconds)); }}>{t('ส่งคำขอ', 'Send request')}</button>
+              <button className="btn sm" onClick={() => setPauseAsk(false)}>{t('ยกเลิก', 'Cancel')}</button>
             </div>
           )}
           {resignAsk && playing && you !== null && (
@@ -332,6 +387,22 @@ export default function Room() {
           </p>
         </aside>
       </div>
+      {pauseOn && pause && (
+        <div className="pause-overlay" role="dialog" aria-modal="true" aria-label={t('เวลานอก', 'Time-out')}>
+          <div className="pause-card">
+            <span className="tag">{t('เวลานอก', 'Time-out')}</span>
+            <div className="pause-count mono" aria-live="off">{pauseSecs}</div>
+            <p>
+              {you === null
+                ? t(`${colorName(pause.by)}ขอเวลานอก ${pause.seconds} วินาที`, `${colorName(pause.by)} asked for a ${pause.seconds}-second time-out`)
+                : pause.by === you
+                  ? t(`คุณขอเวลานอก ${pause.seconds} วินาที`, `You asked for a ${pause.seconds}-second time-out`)
+                  : t(`เพื่อนขอเวลานอก ${pause.seconds} วินาที`, `Your friend asked for a ${pause.seconds}-second time-out`)}
+            </p>
+            <p className="muted small">{t('นาฬิกาทั้งสองฝ่ายหยุดอยู่ กระดานถูกซ่อนจนกว่าจะหมดเวลานอก แล้วเกมจะเดินต่อเอง', 'Both clocks are stopped. The board is hidden until the time-out ends, then play resumes by itself.')}</p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

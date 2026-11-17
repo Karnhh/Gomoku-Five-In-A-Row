@@ -171,6 +171,8 @@ What it offers once enabled:
 - The server decides everything: whose turn it is, whether a point is free, who won and whose clock ran out.
 - A player may ask to take back the move they just played; the opponent has to accept.
 - A rematch needs both players to agree, and swaps colours.
+- A player may ask for a time-out of 5 to 60 seconds. The opponent has 5 seconds to answer, and play simply goes on meanwhile. If they agree, both clocks stop, the board is hidden from everyone (spectators included) and a countdown is shown; then play resumes by itself. No answer, or a refusal, changes nothing.
+- Players see how many spectators are watching.
 - Next-move advice is available in a room: it is computed on the player's own device and shown on their own turns only; the opponent does not see it.
 - No login: each browser keeps its room token in `localStorage`.
 - It polls once a second, and rooms idle for 24 hours are deleted.
@@ -211,6 +213,10 @@ Online games are logged so that play can be analysed later. Local games (two pla
 | `undo_accept` | the opponent agrees; one move is rewound | the one who answered | `ply` (before rewinding) |
 | `undo_decline` | the opponent refuses | the one who answered | `ply` |
 | `undo_cancel` | the asker withdraws the request | the asker | `ply` |
+| `pause_request` | a player asks for a time-out | the asker | `ply`, `seconds` |
+| `pause_accept` | the opponent agrees; the clocks stop for `seconds` | the one who answered | `ply`, `seconds` |
+| `pause_decline` | the opponent refuses | the one who answered | `ply`, `seconds` |
+| `pause_cancel` | the asker withdraws the request | the asker | `ply`, `seconds` |
 | `resign` | a player resigns | the one who resigned | `ply` |
 | `timeout` | the server finds that a clock has run out | the side that ran out | `ply` |
 | `rematch_request` | the first player asks for another game | the asker | `ply` |
@@ -281,6 +287,8 @@ The fourth line reads: Black placed the 5th stone on G9 after 5.6 s. Advice was 
 - **`rank: null` has two causes:** the player ignored the list, or moved before it appeared. `advice.shown` tells them apart.
 - **`advice.done` can be `true` before the time is up**, when the search ends early because it found a forced result or reached its depth limit.
 - **Undo rewrites the game, not the log.** The `move` event of a move that was taken back stays in `events`; only `games.moves` reflects the final game.
+- **A time-out request with no `pause_accept`, `pause_decline` or `pause_cancel` after it lapsed unanswered** (5 seconds). Lapsing writes no event of its own.
+- **`thinkMs` after a time-out counts only the time since play resumed,** not the thinking done before it.
 - **Count games with `finish`,** not `resign` or `timeout`: every finished game has exactly one. A game still in progress, or abandoned, has none.
 - **Advice is per player.** Each player switches it on for themselves; filter by `color` to follow one side.
 - **Size.** A `move` event is about 400 bytes, so a 40-move game is roughly 20 KB. The free 512 MB cluster holds on the order of 25,000 games.
@@ -334,6 +342,7 @@ The token goes in the `Authorization: Bearer <token>` header.
 | POST | `/api/rooms/:code/move` | `{ cell }` |
 | POST | `/api/rooms/:code/undo` | `{ action: request / accept / decline / cancel }` |
 | POST | `/api/rooms/:code/resign` | Resign |
+| POST | `/api/rooms/:code/pause` | Time-out: `{ action: request / accept / decline / cancel, seconds }` |
 | POST | `/api/rooms/:code/rematch` | Ask for a rematch |
 | GET | `/api/health` | Check that the API is up |
 
@@ -510,6 +519,8 @@ Vercel จะเตือนว่าค่าที่ขึ้นต้นด�
 - server เป็นผู้ตัดสินทุกอย่าง: ตาใคร ช่องว่างไหม ใครชนะ และใครหมดเวลา
 - ขอย้อนตาได้เฉพาะตาที่เพิ่งเดิน และอีกฝ่ายต้องยอมรับ
 - ขอเล่นอีกครั้งได้ โดยต้องตอบรับทั้งสองฝ่าย แล้วสลับสีหมาก
+- ขอเวลานอกได้ 5 ถึง 60 วินาที อีกฝ่ายมีเวลาตอบ 5 วินาที ระหว่างนั้นเกมเดินต่อตามปกติ ถ้าตกลง นาฬิกาทั้งสองฝ่ายจะหยุด กระดานจะถูกซ่อนจากทุกคน (รวมผู้ชม) และมีตัวนับถอยหลัง จากนั้นเกมเดินต่อเอง ถ้าไม่ตอบหรือปฏิเสธ ทุกอย่างเป็นไปตามเดิม
+- ผู้เล่นเห็นจำนวนผู้ชมที่กำลังดูอยู่
 - เปิดคำแนะนำตาต่อไปได้ในห้อง: คำนวณบนเครื่องของผู้เล่นเอง แสดงเฉพาะตาของตัวเอง อีกฝ่ายไม่เห็น
 - ไม่ต้อง login: แต่ละเครื่องเก็บ token ของห้องไว้ใน `localStorage`
 - ใช้ polling ทุก 1 วินาที และห้องที่เงียบเกิน 24 ชั่วโมงจะถูกลบ
@@ -550,6 +561,10 @@ Vercel จะเตือนว่าค่าที่ขึ้นต้นด�
 | `undo_accept` | อีกฝ่ายยอมรับ เกมย้อนหนึ่งตา | ผู้ตอบ | `ply` (ก่อนย้อน) |
 | `undo_decline` | อีกฝ่ายปฏิเสธ | ผู้ตอบ | `ply` |
 | `undo_cancel` | ผู้ขอยกเลิกคำขอเอง | ผู้ขอ | `ply` |
+| `pause_request` | ขอเวลานอก | ผู้ขอ | `ply`, `seconds` |
+| `pause_accept` | อีกฝ่ายตกลง นาฬิกาหยุดเป็นเวลา `seconds` วินาที | ผู้ตอบ | `ply`, `seconds` |
+| `pause_decline` | อีกฝ่ายปฏิเสธ | ผู้ตอบ | `ply`, `seconds` |
+| `pause_cancel` | ผู้ขอยกเลิกคำขอเอง | ผู้ขอ | `ply`, `seconds` |
 | `resign` | ยอมแพ้ | ผู้ยอมแพ้ | `ply` |
 | `timeout` | server พบว่านาฬิกาหมด | ฝ่ายที่หมดเวลา | `ply` |
 | `rematch_request` | คนแรกขอเล่นอีกครั้ง | ผู้ขอ | `ply` |
@@ -609,6 +624,8 @@ Vercel จะเตือนว่าค่าที่ขึ้นต้นด�
 - **`rank: null` มีสองสาเหตุ:** ผู้เล่นไม่ทำตามรายการ หรือวางก่อนที่รายการจะขึ้น ใช้ `advice.shown` แยกได้
 - **`advice.done` เป็น `true` ได้ก่อนครบเวลา** เมื่อการค้นจบเร็วเพราะเจอผลบังคับหรือถึงความลึกสูงสุด
 - **การย้อนตาแก้เกม แต่ไม่แก้ log** เหตุการณ์ `move` ของตาที่ถูกย้อนยังอยู่ใน `events` มีเพียง `games.moves` ที่แสดงเกมสุดท้าย
+- **คำขอเวลานอกที่ไม่มี `pause_accept`, `pause_decline` หรือ `pause_cancel` ตามมา คือคำขอที่หมดอายุโดยไม่มีคนตอบ** (5 วินาที) การหมดอายุไม่มีเหตุการณ์ของตัวเอง
+- **`thinkMs` ของตาที่เดินหลังเวลานอก นับเฉพาะเวลาหลังเกมเดินต่อ** ไม่รวมเวลาที่คิดไปก่อนหน้า
 - **นับจำนวนเกมจาก `finish`** ไม่ใช่ `resign` หรือ `timeout` เพราะทุกเกมที่จบมีหนึ่งรายการเสมอ เกมที่ยังเล่นอยู่หรือถูกทิ้งกลางคันจะไม่มี
 - **คำแนะนำเป็นของแต่ละคน** ผู้เล่นแต่ละฝ่ายเปิดปิดเอง ใช้ `color` กรองเพื่อดูทีละฝ่าย
 - **ขนาด** เหตุการณ์ `move` ราว 400 ไบต์ เกม 40 ตาจึงราว 20 KB cluster ฟรี 512 MB เก็บได้ประมาณ 25,000 เกม
@@ -631,6 +648,7 @@ token ส่งผ่าน header `Authorization: Bearer <token>`
 | POST | `/api/rooms/:code/move` | `{ cell }` |
 | POST | `/api/rooms/:code/undo` | `{ action: request / accept / decline / cancel }` |
 | POST | `/api/rooms/:code/resign` | ยอมแพ้ |
+| POST | `/api/rooms/:code/pause` | เวลานอก: `{ action: request / accept / decline / cancel, seconds }` |
 | POST | `/api/rooms/:code/rematch` | ขอเล่นอีกครั้ง |
 | GET | `/api/health` | เช็คว่า API ทำงาน |
 

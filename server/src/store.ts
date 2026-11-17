@@ -19,6 +19,8 @@ export interface RoomStore {
   replace(room: Room): Promise<boolean>;
   /** record that a player polled; does not bump the version */
   touch(code: string, color: Player, now: number): Promise<void>;
+  /** record that a spectator polled, and forget the ones in `drop`; does not bump the version */
+  watch(code: string, key: string, now: number, drop: string[]): Promise<void>;
   /** append one event to the log */
   log(event: LogEvent): Promise<void>;
   /** store the summary of a finished game (once per room + game number) */
@@ -52,6 +54,14 @@ export class MemoryStore implements RoomStore {
   async touch(code: string, color: Player, now: number): Promise<void> {
     const room = this.rooms.get(code);
     if (room) room.seen[color] = now;
+  }
+
+  async watch(code: string, key: string, now: number, drop: string[]): Promise<void> {
+    const room = this.rooms.get(code);
+    if (!room) return;
+    const watchers = { ...(room.watchers ?? {}), [key]: now };
+    for (const k of drop) delete watchers[k];
+    room.watchers = watchers;
   }
 
   async log(event: LogEvent): Promise<void> {
@@ -117,6 +127,15 @@ export class MongoStore implements RoomStore {
 
   async touch(code: string, color: Player, now: number): Promise<void> {
     await (await this.col).updateOne({ code }, { $set: { [`seen.${color}`]: now } });
+  }
+
+  async watch(code: string, key: string, now: number, drop: string[]): Promise<void> {
+    const unset: Record<string, 1> = {};
+    for (const k of drop) unset[`watchers.${k}`] = 1;
+    await (await this.col).updateOne(
+      { code },
+      { $set: { [`watchers.${key}`]: now }, ...(drop.length ? { $unset: unset } : {}) },
+    );
   }
 
   async log(event: LogEvent): Promise<void> {

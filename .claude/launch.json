@@ -29,6 +29,21 @@
         "client"
       ],
       "port": 4173
+    },
+    {
+      "name": "dev2",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "-w",
+        "client",
+        "--",
+        "--port",
+        "5174",
+        "--strictPort"
+      ],
+      "port": 5174
     }
   ]
 }

@@ -225,6 +225,22 @@ kbd, .ui { display: inline-block; padding: 0 7px; border-radius: 6px; border: 1p
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--border); vertical-align: 1px; margin-left: 4px; }
 .dot.on { background: var(--good); }
 
+.spectators { margin: 0; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.eye { width: 14px; height: 8px; border: 1.5px solid currentColor; border-radius: 50%; position: relative; display: inline-block; flex: none; }
+.eye::after { content: ''; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: currentColor; }
+.play-actions .wide { grid-column: 1 / -1; }
+.pause-form { align-items: flex-end; }
+.pause-range { flex: 1 1 100%; display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+.pause-range input { width: 100%; accent-color: var(--accent); }
+.pause-range small { font-weight: 400; }
+.pause-overlay {
+  position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(10px);
+}
+.pause-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); padding: 28px 32px; max-width: 420px; width: 100%; text-align: center; }
+.pause-card p { margin: 0 0 8px; }
+.pause-count { font-size: clamp(72px, 22vw, 120px); line-height: 1.05; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--accent); }
+
 /* ---------- analyze ---------- */
 .analyze-layout { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: 24px; align-items: start; margin-top: 20px; }
 .board-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }

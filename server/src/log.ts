@@ -12,6 +12,7 @@ import type { Reason, Room } from './game.ts';
 export type EventType =
   | 'create' | 'join' | 'move'
   | 'undo_request' | 'undo_accept' | 'undo_decline' | 'undo_cancel'
+  | 'pause_request' | 'pause_accept' | 'pause_decline' | 'pause_cancel'
   | 'resign' | 'timeout' | 'rematch_request' | 'rematch_start' | 'finish';
 
 export interface LogEvent {
@@ -37,6 +38,8 @@ export interface LogEvent {
   adviceBest?: string | null;
   minutes?: number;
   first?: string;
+  /** length of the time-out asked for (pause_* events) */
+  seconds?: number;
   winner?: Player | 0;
   reason?: Reason;
 }

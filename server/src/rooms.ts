@@ -5,7 +5,7 @@ import { randomBytes, randomInt } from 'node:crypto';
 import { Router } from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import type { Player } from '@gomoku/shared/rules';
-import { colorOf, createRoom, join, move, rematch, resign, timeout, undo, view } from './game.ts';
+import { colorOf, createRoom, join, move, pause, rematch, resign, timeout, undo, view } from './game.ts';
 import type { Result, Room } from './game.ts';
 import { createEvent, finishRecords, joinEvent, moveEvent, sanitizeAdvice, simpleEvent, timeoutEvent } from './log.ts';
 import type { EventType, GameRecord, LogEvent } from './log.ts';
@@ -132,6 +132,17 @@ export function roomsRouter(store: RoomStore, clock: () => number = Date.now): R
       await store.touch(room.code, color, now);
       room.seen[color] = now;
     }
+    // A visitor who holds no seat is a spectator; remember them so players can see they have an audience.
+    const key = tokenOf(req);
+    if (!color && key && CLIENT_KEY.test(key)) {
+      const watchers = room.watchers ?? {};
+      if (now - (watchers[key] ?? 0) > 2000) {
+        const stale = Object.keys(watchers).filter((k) => k !== key && now - watchers[k] > 60_000);
+        await store.watch(room.code, key, now, stale);
+        room.watchers = { ...watchers, [key]: now };
+        for (const k of stale) delete room.watchers[k];
+      }
+    }
     res.set('Cache-Control', 'no-store');
     return res.json(view(room, color, now));
   }));
@@ -151,6 +162,17 @@ export function roomsRouter(store: RoomStore, clock: () => number = Date.now): R
     return mutate(req, res,
       (room, color, now) => undo(room, color, action, now),
       (before, _after, color, now) => [simpleEvent(before, `undo_${action}` as EventType, color, now)]);
+  }));
+  router.post('/:code/pause', safe((req, res) => {
+    const action = req.body?.action;
+    if (!['request', 'accept', 'decline', 'cancel'].includes(action)) return res.status(400).json({ error: 'bad action' });
+    const seconds = req.body?.seconds;
+    return mutate(req, res,
+      (room, color, now) => pause(room, color, action, seconds, now),
+      (before, after, color, now) => [{
+        ...simpleEvent(after, `pause_${action}` as EventType, color, now),
+        seconds: (after.pause ?? before.pause)?.seconds,
+      }]);
   }));
   router.post('/:code/rematch', safe((req, res) => mutate(req, res, rematch,
     (before, after, color, now) => (after.status === 'playing'

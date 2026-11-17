@@ -30,8 +30,28 @@ export interface RoomView {
   rematchBy: Player | null;
   /** did each colour poll recently: [black, white] */
   online: [boolean, boolean];
+  /** a time-out that was asked for or is running; null otherwise */
+  pause: PauseView | null;
+  /** how many spectators are watching right now */
+  spectators: number;
   game: number;
   version: number;
+}
+
+/**
+ * A time-out. One player asks for a number of seconds; the other has a few
+ * seconds to answer while play goes on. If they agree, both clocks stop and
+ * the board is hidden until the time is up.
+ */
+export interface PauseView {
+  /** colour that asked */
+  by: Player;
+  /** length of the time-out that was asked for, in seconds */
+  seconds: number;
+  /** 'asked' = waiting for the opponent's answer; 'on' = the game is paused */
+  state: 'asked' | 'on';
+  /** ms until the request lapses ('asked') or the game resumes ('on') */
+  msLeft: number;
 }
 
 export interface CreateRoomReply { code: string; token: string; color: Player }

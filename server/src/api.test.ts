@@ -255,3 +255,68 @@ test('either player can resign at any time, on their turn or not', async () => {
   assert.equal((await call('POST', `/rooms/${code}/resign`, guest)).body.winner, 1);
   assert.equal((await call('GET', `/rooms/${code}`, host)).body.reason, 'resign');
 });
+
+test('time-out over HTTP: ask, agree, the board is frozen, then play resumes', async () => {
+  const { code, token: host } = (await call('POST', '/rooms', undefined, { first: 'me', minutes: 5 })).body;
+  const guest = (await call('POST', `/rooms/${code}/join`)).body.token;
+  now += 4000;
+  assert.equal((await call('POST', `/rooms/${code}/pause`, guest, { action: 'nap' })).status, 400);
+  assert.equal((await call('POST', `/rooms/${code}/pause`, guest, { action: 'request', seconds: 500 })).status, 400);
+  const asked = await call('POST', `/rooms/${code}/pause`, guest, { action: 'request', seconds: 15 });
+  assert.deepEqual(asked.body.pause, { by: 2, seconds: 15, state: 'asked', msLeft: 5000 });
+  now += 1000;
+  // the host sees the request and can still play; here they agree instead
+  assert.equal((await call('GET', `/rooms/${code}`, host)).body.pause.state, 'asked');
+  const on = await call('POST', `/rooms/${code}/pause`, host, { action: 'accept' });
+  assert.deepEqual(on.body.pause, { by: 2, seconds: 15, state: 'on', msLeft: 15_000 });
+  assert.deepEqual(on.body.clock, [295_000, 300_000]);
+  now += 10_000;
+  assert.equal((await call('POST', `/rooms/${code}/move`, host, { cell: L('H8') })).status, 409);
+  const mid = (await call('GET', `/rooms/${code}`)).body; // a spectator sees it too
+  assert.deepEqual([mid.pause.state, mid.pause.msLeft, mid.clock[0]], ['on', 5000, 295_000]);
+  now += 5000;
+  assert.equal((await call('GET', `/rooms/${code}`, host)).body.pause, null);
+  now += 2000;
+  const moved = await call('POST', `/rooms/${code}/move`, host, { cell: L('H8') });
+  assert.equal(moved.status, 200);
+  assert.deepEqual(moved.body.clock, [293_000, 300_000]); // 5 s before + 2 s after; the 15 s in between cost nothing
+
+  // a request nobody answers just goes away
+  await call('POST', `/rooms/${code}/pause`, host, { action: 'request', seconds: 60 });
+  now += 5000;
+  assert.equal((await call('GET', `/rooms/${code}`, guest)).body.pause, null);
+  assert.equal((await call('POST', `/rooms/${code}/pause`, guest, { action: 'accept' })).status, 409);
+  // and a refusal clears it at once
+  await call('POST', `/rooms/${code}/pause`, host, { action: 'request', seconds: 5 });
+  assert.equal((await call('POST', `/rooms/${code}/pause`, guest, { action: 'decline' })).body.pause, null);
+
+  const log = store.events.filter((e) => e.code === code && e.type.startsWith('pause_'));
+  assert.deepEqual(log.map((e) => [e.type, e.color, e.seconds]), [
+    ['pause_request', 2, 15], ['pause_accept', 1, 15], ['pause_request', 1, 60], ['pause_request', 1, 5], ['pause_decline', 2, 5],
+  ]);
+});
+
+test('players are told how many spectators are watching', async () => {
+  const { code, token: host } = (await call('POST', '/rooms', undefined, { first: 'me', minutes: 0 })).body;
+  const guest = (await call('POST', `/rooms/${code}/join`)).body.token;
+  assert.equal((await call('GET', `/rooms/${code}`, host)).body.spectators, 0);
+  const s1 = '1'.repeat(32), s2 = '2'.repeat(32);
+  await call('GET', `/rooms/${code}`, s1);
+  await call('GET', `/rooms/${code}`, s2);
+  await call('GET', `/rooms/${code}`, s2);           // the same spectator polling again is still one
+  await call('GET', `/rooms/${code}`);               // no key: not counted
+  await call('GET', `/rooms/${code}`, 'not-a-key');  // malformed key: not counted
+  assert.equal((await call('GET', `/rooms/${code}`, host)).body.spectators, 2);
+  assert.equal((await call('GET', `/rooms/${code}`, guest)).body.spectators, 2);
+  assert.equal((await call('GET', `/rooms/${code}`, s1)).body.you, null);
+  // players are never counted as spectators
+  now += 3000;
+  await call('GET', `/rooms/${code}`, host);
+  assert.equal((await call('GET', `/rooms/${code}`, guest)).body.spectators, 2);
+  // one of them leaves: after a few seconds without polling they drop out
+  now += 4000;
+  await call('GET', `/rooms/${code}`, s1);
+  assert.equal((await call('GET', `/rooms/${code}`, host)).body.spectators, 1);
+  now += 10_000;
+  assert.equal((await call('GET', `/rooms/${code}`, host)).body.spectators, 0);
+});

@@ -68,4 +68,6 @@ export const sendMove = (code: string, token: string, cell: number, advice: Advi
 export const sendResign = (code: string, token: string) => call<RoomView>('POST', `/rooms/${code}/resign`, token);
 export const sendUndo = (code: string, token: string, action: 'request' | 'accept' | 'decline' | 'cancel') =>
   call<RoomView>('POST', `/rooms/${code}/undo`, token, { action });
+export const sendPause = (code: string, token: string, action: 'request' | 'accept' | 'decline' | 'cancel', seconds?: number) =>
+  call<RoomView>('POST', `/rooms/${code}/pause`, token, { action, seconds });
 export const sendRematch = (code: string, token: string) => call<RoomView>('POST', `/rooms/${code}/rematch`, token);
